@@ -9,7 +9,7 @@ function Carrito() {
     eliminarDelCarrito,
     actualizarCantidad,
     vaciarCarrito,
-    finalizarCompra,
+    //finalizarCompra,
   } = useCarrito();
 
   const [metodoPago, setMetodoPago] = useState("mercadopago");

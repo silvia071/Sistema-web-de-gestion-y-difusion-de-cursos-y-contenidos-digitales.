@@ -12,6 +12,9 @@ import Blog from "../pages/Blog";
 import BlogDetalle from "../pages/BlogDetalle";
 import Perfil from "../pages/Perfil";
 import Carrito from "../pages/Carrito";
+import Categorias from "../pages/Categorias";
+import Nosotros from "../pages/Nosotros";
+import Contactos from "../pages/Contactos";
 
 function AppRouter() {
   return (
@@ -22,6 +25,9 @@ function AppRouter() {
         <Route path="/cursos/:id" element={<DetalleCurso />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogDetalle />} />
+        <Route path="/categorias" element={<Categorias />} />
+        <Route path="/nosotros" element={<Nosotros />} />
+        <Route path="/contactos" element={<Contactos />} />
       </Route>
 
       <Route element={<AuthLayout />}>
