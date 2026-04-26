@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { API_BASE, USE_MOCK_API } from "../config/api";
 import { readMockPerfil, writeMockPerfil } from "../services/mockPerfil";
 import "./Login.css";
@@ -123,12 +123,9 @@ function Login() {
 
         <p className="login-register-text">
           ¿No tenés cuenta?{" "}
-          <span
-            className="login-register-link"
-            onClick={() => navigate("/registro")}
-          >
+          <Link className="login-register-link" to="/registro">
             Registrate
-          </span>
+          </Link>
         </p>
       </div>
     </section>
