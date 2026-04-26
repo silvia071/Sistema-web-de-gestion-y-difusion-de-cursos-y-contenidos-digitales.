@@ -8,7 +8,7 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 // Rutas
 const usuarioRoutes = require("./routes/usuario.route");
 const cursoRoutes = require("./routes/curso.route");

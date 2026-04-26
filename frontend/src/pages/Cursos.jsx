@@ -4,22 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { API_BASE } from "../config/api";
 import "./Curso.css";
 
-import jsImg from "../assets/javaScript.png";
-import pyImg from "../assets/Python.png";
-import javaImg from "../assets/java.png";
-import htmlImg from "../assets/html.png";
-import cppImg from "../assets/C++.png";
-import reactImg from "../assets/react.png";
-
-const imagenes = {
-  JavaScript: jsImg,
-  Python: pyImg,
-  Java: javaImg,
-  "HTML y CSS": htmlImg,
-  "C++": cppImg,
-  React: reactImg,
-};
-
 function Cursos() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -136,23 +120,9 @@ function Cursos() {
     return conteo;
   }, [cursos]);
 
+  // 🔥 SOLO BACKEND
   const obtenerImagenCurso = (curso) => {
-    const nombreCategoria = curso.categoria?.nombre;
-
-    if (nombreCategoria && imagenes[nombreCategoria])
-      return imagenes[nombreCategoria];
-
-    const titulo = curso.titulo?.toLowerCase() || "";
-
-    if (titulo.includes("javascript")) return jsImg;
-    if (titulo.includes("python")) return pyImg;
-    if (titulo.includes("java")) return javaImg;
-    if (titulo.includes("html")) return htmlImg;
-    if (titulo.includes("css")) return htmlImg;
-    if (titulo.includes("c++")) return cppImg;
-    if (titulo.includes("react")) return reactImg;
-
-    return jsImg;
+    return `${API_BASE}${curso.imagenPortada}`;
   };
 
   const handleAgregarAlCarrito = (e, curso) => {

@@ -89,15 +89,6 @@ function Navbar() {
           </NavLink>
 
           <NavLink
-            to="/categorias"
-            className={({ isActive }) =>
-              `navbar__link ${isActive ? "active" : ""}`
-            }
-          >
-            Categorías
-          </NavLink>
-
-          <NavLink
             to="/nosotros"
             className={({ isActive }) =>
               `navbar__link ${isActive ? "active" : ""}`

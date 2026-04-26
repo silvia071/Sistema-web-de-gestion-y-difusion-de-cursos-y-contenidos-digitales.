@@ -62,15 +62,25 @@ export default function CursoPlayer() {
     }
   };
 
-  const handleLeccion = (index) => {
+  // ✅ SOLO CAMBIA LA LECCIÓN (NO EL PROGRESO)
+  const handleSeleccionarLeccion = (index) => {
     setLeccionActual(index);
+  };
+
+  // ✅ AVANZA PROGRESO SOLO CON EL BOTÓN
+  const handleSiguienteLeccion = () => {
+    const siguienteIndex = leccionActual + 1;
 
     const nuevoProgreso = Math.round(
-      ((index + 1) / curso.lecciones.length) * 100,
+      ((siguienteIndex + 1) / curso.lecciones.length) * 100,
     );
 
     setProgreso(nuevoProgreso);
     actualizarProgreso(nuevoProgreso);
+
+    if (siguienteIndex < curso.lecciones.length) {
+      setLeccionActual(siguienteIndex);
+    }
   };
 
   if (!curso) return <p>Cargando...</p>;
@@ -84,7 +94,7 @@ export default function CursoPlayer() {
         {curso.lecciones.map((l, i) => (
           <div
             key={l._id}
-            onClick={() => handleLeccion(i)}
+            onClick={() => handleSeleccionarLeccion(i)}
             className={`curso-player-item ${
               i === leccionActual ? "active" : ""
             }`}
@@ -131,12 +141,10 @@ export default function CursoPlayer() {
         {/* 👉 SIGUIENTE */}
         <button
           className="curso-player-btn"
-          onClick={() => handleLeccion(leccionActual + 1)}
-          disabled={leccionActual === curso.lecciones.length - 1}
+          onClick={handleSiguienteLeccion}
+          disabled={progreso >= 100}
         >
-          {leccionActual === curso.lecciones.length - 1
-            ? "Curso completado ✔"
-            : "Siguiente lección →"}
+          {progreso >= 100 ? "Curso completado ✔" : "Siguiente lección →"}
         </button>
       </div>
     </div>
