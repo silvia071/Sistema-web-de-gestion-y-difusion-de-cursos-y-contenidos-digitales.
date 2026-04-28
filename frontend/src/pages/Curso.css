@@ -100,3 +100,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Efecto para que las tarjetas de cursos resalten al pasar el mouse */
+.card-curso {
+  transition: all 0.3s ease;
+  /* Esto hace que el movimiento sea suave */
+}
+
+.card-curso:hover {
+  transform: translateY(-10px);
+  /* La tarjeta sube un poquito */
+  box-shadow: 0 12px 20px rgba(106, 90, 205, 0.4);
+  /* Le da una sombra suave */
+  cursor: pointer;
+}
