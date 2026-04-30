@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config/api";
-import "./Blog.css";
 import CardBlog from "../components/common/CardBlog";
-
+import "./Blog.css";
 
 function Blog() {
   const navigate = useNavigate();
@@ -15,16 +14,21 @@ function Blog() {
     const cargarPublicaciones = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/publicaciones`);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          setError("No se pudieron cargar las publicaciones");
+          setError("No se pudieron cargar las publicaciones.");
           return;
         }
 
-        setPublicaciones(data);
+        const publicacionesData = Array.isArray(data)
+          ? data
+          : data.publicaciones || [];
+
+        setPublicaciones(publicacionesData);
       } catch (err) {
-        setError("Error de conexión con el servidor");
+        console.error(err);
+        setError("Error de conexión con el servidor.");
       } finally {
         setLoading(false);
       }
@@ -33,34 +37,29 @@ function Blog() {
     cargarPublicaciones();
   }, []);
 
-  const formatearFecha = (fecha) => {
-    if (!fecha) return "Sin fecha";
-    return new Date(fecha).toLocaleDateString("es-AR");
-  };
-
   const obtenerResumen = (pub) => {
     return pub.resumen || pub.contenido || "Sin resumen disponible.";
   };
 
-  const obtenerCategoria = (pub) => {
-    return pub.categoria?.nombre || "Sin categoría";
-  };
+  const obtenerImagen = (pub) => {
+    if (!pub.imagen) return "/placeholder-curso.png";
 
-  const obtenerImagen = (pub, index) => {
-    return pub.imagen || `https://picsum.photos/400/200?random=${index + 1}`;
+    if (pub.imagen.startsWith("http")) {
+      return pub.imagen;
+    }
+
+    return `${API_BASE}${pub.imagen}`;
   };
 
   if (loading) {
     return (
       <section className="blog-page">
         <div className="blog-header">
-          <h1 className="blog-title">Blog</h1>
-          <p className="blog-subtitle">
-            Descubrí artículos, novedades y recursos sobre programación y
-            tecnología.
-          </p>
+          <h1>Blog</h1>
+          <p>Artículos y novedades sobre programación</p>
         </div>
-        <p>Cargando publicaciones...</p>
+
+        <p className="blog-status">Cargando publicaciones...</p>
       </section>
     );
   }
@@ -69,13 +68,11 @@ function Blog() {
     return (
       <section className="blog-page">
         <div className="blog-header">
-          <h1 className="blog-title">Blog</h1>
-          <p className="blog-subtitle">
-            Descubrí artículos, novedades y recursos sobre programación y
-            tecnología.
-          </p>
+          <h1>Blog</h1>
+          <p>Artículos y novedades sobre programación</p>
         </div>
-        <p>{error}</p>
+
+        <p className="blog-status blog-error">{error}</p>
       </section>
     );
   }
@@ -87,20 +84,23 @@ function Blog() {
         <p>Artículos y novedades sobre programación</p>
       </div>
 
-      <div className="grid grid-3">
-        {publicaciones.map((pub, index) => (
-          <CardBlog
-            key={pub._id}
-            imagen={obtenerImagen(pub, index)}
-            titulo={pub.titulo}
-            texto={obtenerResumen(pub)}
-            onClick={() => navigate(`/blog/${pub._id}`)}
-          />
-        ))}
-      </div>
+      {publicaciones.length === 0 ? (
+        <p className="blog-status">No hay publicaciones disponibles.</p>
+      ) : (
+        <div className="grid grid-3">
+          {publicaciones.map((pub, index) => (
+            <CardBlog
+              key={pub._id || index}
+              imagen={obtenerImagen(pub)}
+              titulo={pub.titulo}
+              texto={obtenerResumen(pub)}
+              onClick={() => navigate(`/blog/${pub._id}`)}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
-
 
 export default Blog;

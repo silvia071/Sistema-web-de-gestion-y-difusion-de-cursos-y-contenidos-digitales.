@@ -6,19 +6,35 @@ import "./Registro.css";
 function Registro() {
   const navigate = useNavigate();
 
+  const [form, setForm] = useState({
+    nombre: "",
+    apellido: "",
+    email: "",
+    password: "",
+  });
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    const nombre = e.target.nombre.value.trim();
-    const apellido = e.target.apellido.value.trim();
-    const email = e.target.email.value.trim();
-    const contrasenia = e.target.password.value;
+    const nombre = form.nombre.trim();
+    const apellido = form.apellido.trim();
+    const email = form.email.trim();
+    const contrasenia = form.password;
 
     if (!nombre || !apellido || !email || !contrasenia) {
       setError("Completá todos los campos.");
@@ -96,6 +112,8 @@ function Registro() {
                 name="nombre"
                 type="text"
                 placeholder="Tu nombre"
+                value={form.nombre}
+                onChange={handleChange}
                 required
               />
             </div>
@@ -107,6 +125,8 @@ function Registro() {
                 name="apellido"
                 type="text"
                 placeholder="Tu apellido"
+                value={form.apellido}
+                onChange={handleChange}
                 required
               />
             </div>
@@ -119,6 +139,8 @@ function Registro() {
               name="email"
               type="email"
               placeholder="tu@email.com"
+              value={form.email}
+              onChange={handleChange}
               required
             />
           </div>
@@ -130,6 +152,8 @@ function Registro() {
               name="password"
               type="password"
               placeholder="Ingresá una contraseña"
+              value={form.password}
+              onChange={handleChange}
               required
             />
           </div>

@@ -9,18 +9,35 @@ function Login() {
   const navigate = useNavigate();
   const { recargarCarrito } = useCarrito();
 
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const email = e.target.email.value.trim();
-    const password = e.target.password.value;
+    const email = form.email.trim();
+    const password = form.password;
 
-    if (!email || !password) return;
+    if (!email || !password) {
+      setError("Completá todos los campos.");
+      return;
+    }
 
     if (USE_MOCK_API) {
       const perfil = readMockPerfil(email);
@@ -92,6 +109,8 @@ function Login() {
               className="login-input"
               type="email"
               placeholder="Ingresá tu email"
+              value={form.email}
+              onChange={handleChange}
               required
             />
           </div>
@@ -108,6 +127,8 @@ function Login() {
                 className="login-input"
                 type={showPassword ? "text" : "password"}
                 placeholder="Ingresá tu contraseña"
+                value={form.password}
+                onChange={handleChange}
                 required
               />
 

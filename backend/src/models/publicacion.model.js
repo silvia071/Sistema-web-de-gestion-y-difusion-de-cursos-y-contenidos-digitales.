@@ -31,6 +31,12 @@ const publicacionSchema = new mongoose.Schema(
       },
     },
 
+    // 🔥 NUEVO CAMPO
+    imagen: {
+      type: String,
+      default: "",
+    },
+
     fechaPublicacion: {
       type: Date,
       default: Date.now,
@@ -78,6 +84,7 @@ publicacionSchema.methods.mostrarPublicacion = function () {
     id: this._id,
     titulo: this.titulo,
     contenido: this.contenido,
+    imagen: this.imagen, // 👈 importante
     fechaPublicacion: this.fechaPublicacion,
     estado: this.estado,
     categoria: this.categoria,

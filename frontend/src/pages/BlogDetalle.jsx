@@ -15,16 +15,17 @@ function BlogDetalle() {
     const cargarPublicacion = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/publicaciones/${id}`);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          setError("Publicación no encontrada");
+          setError(data.mensaje || "Publicación no encontrada.");
           return;
         }
 
         setPublicacion(data);
       } catch (err) {
-        setError("Error de conexión con el servidor");
+        console.error(err);
+        setError("Error de conexión con el servidor.");
       } finally {
         setLoading(false);
       }
@@ -42,8 +43,15 @@ function BlogDetalle() {
     return pub.categoria?.nombre || "Sin categoría";
   };
 
+  // 🔥 CORREGIDO
   const obtenerImagen = (pub) => {
-    return pub.imagen || "https://picsum.photos/800/400?random=1";
+    if (!pub.imagen) return `${API_BASE}/uploads/test.png`;
+
+    if (pub.imagen.startsWith("http")) {
+      return pub.imagen;
+    }
+
+    return `${API_BASE}${pub.imagen}`;
   };
 
   if (loading) {
@@ -60,7 +68,7 @@ function BlogDetalle() {
         <button className="blog-detalle-btn" onClick={() => navigate("/blog")}>
           ← Volver
         </button>
-        <h2>Publicación no encontrada</h2>
+        <h2>{error || "Publicación no encontrada."}</h2>
       </div>
     );
   }
