@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config/api";
 import "./Blog.css";
+import CardBlog from "../components/common/CardBlog";
+
 
 function Blog() {
   const navigate = useNavigate();
@@ -81,42 +83,24 @@ function Blog() {
   return (
     <section className="blog-page">
       <div className="blog-header">
-        <h1 className="blog-title">Blog</h1>
-        <p className="blog-subtitle">
-          Descubrí artículos, novedades y recursos sobre programación y
-          tecnología.
-        </p>
+        <h1>Blog</h1>
+        <p>Artículos y novedades sobre programación</p>
       </div>
 
-      <div className="blog-grid">
+      <div className="grid grid-3">
         {publicaciones.map((pub, index) => (
-          <div
+          <CardBlog
             key={pub._id}
-            className="blog-card"
+            imagen={obtenerImagen(pub, index)}
+            titulo={pub.titulo}
+            texto={obtenerResumen(pub)}
             onClick={() => navigate(`/blog/${pub._id}`)}
-          >
-            <img
-              src={obtenerImagen(pub, index)}
-              alt={pub.titulo}
-              className="blog-image"
-            />
-
-            <div className="blog-content">
-              <span className="blog-category">{obtenerCategoria(pub)}</span>
-
-              <h2 className="blog-card-title">{pub.titulo}</h2>
-
-              <p className="blog-card-text">{obtenerResumen(pub)}</p>
-
-              <small className="blog-date">
-                {formatearFecha(pub.fechaPublicacion || pub.createdAt)}
-              </small>
-            </div>
-          </div>
+          />
         ))}
       </div>
     </section>
   );
 }
+
 
 export default Blog;

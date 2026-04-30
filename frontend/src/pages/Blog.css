@@ -139,3 +139,12 @@
   color: #777;
   margin-top: auto;
 }
+
+.blog-page {
+  padding: 40px;
+}
+
+.blog-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
