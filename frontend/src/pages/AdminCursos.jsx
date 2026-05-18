@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./AdminCursos.css";
 
@@ -23,11 +24,33 @@ function AdminCursos() {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
 
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroNivel, setFiltroNivel] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
+
+  const formCursoRef = useRef(null);
+  const inputTituloRef = useRef(null);
+  const navigate = useNavigate();
+
   const limpiarForm = () => {
     setForm(ESTADO_INICIAL_FORM);
     setEditandoId(null);
     setError("");
     setMensaje("");
+  };
+
+  const handleNuevoCurso = () => {
+    limpiarForm();
+
+    setTimeout(() => {
+      formCursoRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
+      inputTituloRef.current?.focus();
+    }, 100);
   };
 
   const cargarDatos = async () => {
@@ -207,174 +230,492 @@ function AdminCursos() {
     return estado || "-";
   };
 
+  const obtenerCategoriaNombre = (categoria) => {
+    if (!categoria) return "-";
+
+    if (typeof categoria === "object") {
+      return categoria.nombre || "-";
+    }
+
+    const encontrada = categorias.find(
+      (cat) => (cat._id || cat.id) === categoria,
+    );
+
+    return encontrada?.nombre || "-";
+  };
+
+  const obtenerInicialesCurso = (titulo = "") => {
+    const texto = titulo.toLowerCase();
+
+    if (texto.includes("javascript")) return "JS";
+    if (texto.includes("python")) return "PY";
+    if (texto.includes("java")) return "JV";
+    if (texto.includes("c++")) return "C++";
+    if (texto.includes("html")) return "HTML";
+    if (texto.includes("css")) return "CSS";
+    if (texto.includes("react")) return "RE";
+    if (texto.includes("node")) return "ND";
+    if (texto.includes("sql")) return "SQL";
+    if (texto.includes("mongo")) return "DB";
+
+    return titulo
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((palabra) => palabra[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  const cursosFiltrados = useMemo(() => {
+    return cursos.filter((curso) => {
+      const textoBusqueda = busqueda.toLowerCase().trim();
+
+      const coincideBusqueda =
+        !textoBusqueda ||
+        curso.titulo?.toLowerCase().includes(textoBusqueda) ||
+        curso.descripcion?.toLowerCase().includes(textoBusqueda);
+
+      const coincideNivel = !filtroNivel || curso.nivel === filtroNivel;
+      const coincideEstado = !filtroEstado || curso.estado === filtroEstado;
+
+      const cursoCategoria =
+        typeof curso.categoria === "object"
+          ? curso.categoria?._id || curso.categoria?.id
+          : curso.categoria;
+
+      const coincideCategoria =
+        !filtroCategoria || cursoCategoria === filtroCategoria;
+
+      return (
+        coincideBusqueda && coincideNivel && coincideEstado && coincideCategoria
+      );
+    });
+  }, [cursos, busqueda, filtroNivel, filtroEstado, filtroCategoria]);
+
+  const totalCursos = cursos.length;
+
+  const totalPublicados = cursos.filter(
+    (curso) => curso.estado === "PUBLICADO",
+  ).length;
+
+  const totalBorradores = cursos.filter(
+    (curso) => curso.estado === "BORRADOR",
+  ).length;
+
+  const totalCategorias = categorias.length;
+
   if (loading) {
     return (
-      <section className="admin-cursos">
-        <h1>Gestión de cursos</h1>
-        <p>Cargando cursos...</p>
+      <section className="admin-cursos-page">
+        <div className="admin-cursos-shell admin-loading-card">
+          <h1>Gestión de cursos</h1>
+          <p>Cargando cursos...</p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="admin-cursos">
-      <div className="admin-cursos-header">
-        <div>
-          <h1>Gestión de cursos</h1>
-          <p>Creá, editá, publicá u ocultá cursos desde el panel.</p>
+    <section className="admin-cursos-page">
+      <div className="admin-cursos-shell">
+        <header className="admin-cursos-header">
+          <div>
+            <div className="admin-breadcrumb">
+              <button
+                type="button"
+                className="admin-breadcrumb-link"
+                onClick={() => navigate("/admin")}
+              >
+                Dashboard
+              </button>
+              <span>›</span>
+              Cursos
+            </div>
+
+            <h1>Gestión de cursos</h1>
+
+            <p>
+              Creá, editá, publicá u ocultá cursos desde el panel de
+              administración.
+            </p>
+          </div>
+
+          <div className="admin-header-actions">
+            <button
+              type="button"
+              className="admin-back-btn"
+              onClick={() => navigate("/admin")}
+            >
+              ← Volver al panel
+            </button>
+
+            <button
+              type="button"
+              className="admin-primary-btn"
+              onClick={handleNuevoCurso}
+            >
+              <span>+</span>
+              Nuevo curso
+            </button>
+          </div>
+        </header>
+
+        {(mensaje || error || editandoId) && (
+          <div className="admin-feedback-zone">
+            {mensaje && <div className="admin-alert success">{mensaje}</div>}
+            {error && <div className="admin-alert error">{error}</div>}
+
+            {editandoId && (
+              <div className="admin-alert info">
+                Estás editando un curso seleccionado.
+              </div>
+            )}
+          </div>
+        )}
+
+        <section className="admin-cursos-stats">
+          <article className="admin-curso-stat-card purple">
+            <div className="admin-curso-stat-icon">🎓</div>
+            <div>
+              <span>Total cursos</span>
+              <strong>{totalCursos}</strong>
+              <p>En la plataforma</p>
+            </div>
+          </article>
+
+          <article className="admin-curso-stat-card green">
+            <div className="admin-curso-stat-icon">◉</div>
+            <div>
+              <span>Publicados</span>
+              <strong>{totalPublicados}</strong>
+              <p>Cursos visibles</p>
+            </div>
+          </article>
+
+          <article className="admin-curso-stat-card gold">
+            <div className="admin-curso-stat-icon">▣</div>
+            <div>
+              <span>Borradores</span>
+              <strong>{totalBorradores}</strong>
+              <p>Pendientes de publicar</p>
+            </div>
+          </article>
+
+          <article className="admin-curso-stat-card cyan">
+            <div className="admin-curso-stat-icon">▰</div>
+            <div>
+              <span>Categorías</span>
+              <strong>{totalCategorias}</strong>
+              <p>Áreas activas</p>
+            </div>
+          </article>
+        </section>
+
+        <div className="admin-toolbar">
+          <div className="admin-search">
+            <span>⌕</span>
+            <input
+              type="text"
+              placeholder="Buscar cursos..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+
+          <label className="admin-filter">
+            <span>Nivel</span>
+            <select
+              value={filtroNivel}
+              onChange={(e) => setFiltroNivel(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="PRINCIPIANTE">Principiante</option>
+              <option value="INTERMEDIO">Intermedio</option>
+              <option value="AVANZADO">Avanzado</option>
+            </select>
+          </label>
+
+          <label className="admin-filter">
+            <span>Categoría</span>
+            <select
+              value={filtroCategoria}
+              onChange={(e) => setFiltroCategoria(e.target.value)}
+            >
+              <option value="">Todas</option>
+              {categorias.map((cat) => (
+                <option key={cat._id || cat.id} value={cat._id || cat.id}>
+                  {cat.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="admin-filter">
+            <span>Estado</span>
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="BORRADOR">Borrador</option>
+              <option value="PUBLICADO">Publicado</option>
+              <option value="OCULTO">Oculto</option>
+            </select>
+          </label>
+
+          <button
+            type="button"
+            className="admin-secondary-btn"
+            onClick={cargarDatos}
+          >
+            ↻ Recargar
+          </button>
         </div>
 
-        <button type="button" onClick={cargarDatos}>
-          Recargar
-        </button>
-      </div>
-
-      {mensaje && <div className="admin-alert success">{mensaje}</div>}
-      {error && <div className="admin-alert error">{error}</div>}
-
-      {editandoId && (
-        <p className="admin-editando">Editando curso seleccionado</p>
-      )}
-
-      <form className="admin-form" onSubmit={guardarCurso}>
-        <input
-          name="titulo"
-          placeholder="Título"
-          value={form.titulo}
-          onChange={handleChange}
-          required
-        />
-
-        <textarea
-          name="descripcion"
-          placeholder="Descripción"
-          value={form.descripcion}
-          onChange={handleChange}
-          rows={4}
-          required
-        />
-
-        <input
-          name="precio"
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder="Precio"
-          value={form.precio}
-          onChange={handleChange}
-          required
-        />
-
-        <input
-          name="duracion"
-          placeholder="Duración"
-          value={form.duracion}
-          onChange={handleChange}
-          required
-        />
-
-        <input
-          name="imagenPortada"
-          placeholder="URL o ruta de imagen de portada"
-          value={form.imagenPortada}
-          onChange={handleChange}
-        />
-
-        <select
-          name="nivel"
-          value={form.nivel}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Nivel</option>
-          <option value="PRINCIPIANTE">Principiante</option>
-          <option value="INTERMEDIO">Intermedio</option>
-          <option value="AVANZADO">Avanzado</option>
-        </select>
-
-        <select
-          name="categoria"
-          value={form.categoria}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Categoría</option>
-
-          {categorias.map((cat) => (
-            <option key={cat._id || cat.id} value={cat._id || cat.id}>
-              {cat.nombre}
-            </option>
-          ))}
-        </select>
-
-        <select
-          name="estado"
-          value={form.estado}
-          onChange={handleChange}
-          required
-        >
-          <option value="BORRADOR">Borrador</option>
-          <option value="PUBLICADO">Publicado</option>
-          <option value="OCULTO">Oculto</option>
-        </select>
-
-        <button type="submit" disabled={guardando}>
-          {guardando
-            ? "Guardando..."
-            : editandoId
-              ? "Guardar cambios"
-              : "Crear curso"}
-        </button>
-
-        {editandoId && (
-          <button type="button" onClick={limpiarForm} disabled={guardando}>
-            Cancelar
-          </button>
-        )}
-      </form>
-
-      <div className="admin-list">
-        {cursos.length === 0 ? (
-          <div className="admin-empty">No hay cursos cargados.</div>
-        ) : (
-          cursos.map((curso) => (
-            <div key={curso._id || curso.id} className="admin-item">
-              <div>
-                <h3>{curso.titulo}</h3>
-
-                <p>{curso.descripcion}</p>
-
-                <small>
-                  Nivel: {formatearNivel(curso.nivel)}
-                  {" | "}
-                  Precio: ${Number(curso.precio || 0).toLocaleString("es-AR")}
-                  {" | "}
-                  Estado: {formatearEstado(curso.estado)}
-                </small>
-              </div>
+        <div className="admin-cursos-dashboard-grid">
+          <form
+            ref={formCursoRef}
+            className="admin-form-card"
+            onSubmit={guardarCurso}
+          >
+            <div className="admin-form-card-header">
+              <div className="admin-form-icon">✎</div>
 
               <div>
-                <button
-                  type="button"
-                  onClick={() => cargarCursoParaEditar(curso)}
-                >
-                  Editar
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => eliminarCurso(curso._id || curso.id)}
-                  style={{
-                    background: "#ef4444",
-                    marginLeft: "8px",
-                  }}
-                >
-                  Eliminar
-                </button>
+                <h2>{editandoId ? "Editar curso" : "Crear nuevo curso"}</h2>
+                <p>
+                  {editandoId
+                    ? "Modificá la información del curso seleccionado."
+                    : "Completá la información para agregar un nuevo curso."}
+                </p>
               </div>
             </div>
-          ))
-        )}
+
+            <div className="admin-form-grid">
+              <label>
+                <span>Título</span>
+                <input
+                  ref={inputTituloRef}
+                  name="titulo"
+                  placeholder="Ej. Curso de JavaScript"
+                  value={form.titulo}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+
+              <label>
+                <span>Descripción</span>
+                <textarea
+                  name="descripcion"
+                  placeholder="Describe brevemente el contenido del curso..."
+                  value={form.descripcion}
+                  onChange={handleChange}
+                  rows={3}
+                  required
+                />
+              </label>
+
+              <label>
+                <span>Precio</span>
+                <input
+                  name="precio"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Ej. 15000"
+                  value={form.precio}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+
+              <label>
+                <span>Duración</span>
+                <input
+                  name="duracion"
+                  placeholder="Ej. 20 horas"
+                  value={form.duracion}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+
+              <label>
+                <span>URL o ruta de imagen</span>
+                <input
+                  name="imagenPortada"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  value={form.imagenPortada}
+                  onChange={handleChange}
+                />
+              </label>
+
+              <label>
+                <span>Nivel</span>
+                <select
+                  name="nivel"
+                  value={form.nivel}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Seleccioná el nivel</option>
+                  <option value="PRINCIPIANTE">Principiante</option>
+                  <option value="INTERMEDIO">Intermedio</option>
+                  <option value="AVANZADO">Avanzado</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Categoría</span>
+                <select
+                  name="categoria"
+                  value={form.categoria}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Seleccioná la categoría</option>
+
+                  {categorias.map((cat) => (
+                    <option key={cat._id || cat.id} value={cat._id || cat.id}>
+                      {cat.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span>Estado</span>
+                <select
+                  name="estado"
+                  value={form.estado}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="BORRADOR">Borrador</option>
+                  <option value="PUBLICADO">Publicado</option>
+                  <option value="OCULTO">Oculto</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="admin-form-actions admin-form-actions-inline">
+              <button
+                type="button"
+                className="admin-clean-btn"
+                onClick={limpiarForm}
+                disabled={guardando}
+              >
+                {editandoId ? "Cancelar" : "Limpiar"}
+              </button>
+
+              <button
+                type="submit"
+                className="admin-save-btn"
+                disabled={guardando}
+              >
+                {guardando
+                  ? "Guardando..."
+                  : editandoId
+                    ? "Guardar cambios"
+                    : "Guardar curso"}
+              </button>
+            </div>
+
+            <div className="admin-cursos-help-card">
+              <div>💡</div>
+              <p>
+                Los cursos en estado <strong>Publicado</strong> quedan visibles
+                para los usuarios de la plataforma.
+              </p>
+            </div>
+          </form>
+
+          <div className="admin-list-card">
+            <div className="admin-list-header">
+              <div>
+                <h2>Cursos publicados</h2>
+                <p>Listado general de cursos cargados en la plataforma.</p>
+              </div>
+
+              <span>{cursosFiltrados.length} cursos</span>
+            </div>
+
+            <div className="admin-list">
+              {cursosFiltrados.length === 0 ? (
+                <div className="admin-empty">No hay cursos para mostrar.</div>
+              ) : (
+                cursosFiltrados.map((curso) => (
+                  <article key={curso._id || curso.id} className="admin-item">
+                    <div className="admin-course-main">
+                      <div className="admin-course-avatar">
+                        {obtenerInicialesCurso(curso.titulo)}
+                      </div>
+
+                      <div>
+                        <h3>{curso.titulo}</h3>
+                        <p>{curso.descripcion}</p>
+                      </div>
+                    </div>
+
+                    <div className="admin-course-meta">
+                      <div>
+                        <span>Nivel</span>
+                        <strong className="admin-pill level">
+                          {formatearNivel(curso.nivel)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Categoría</span>
+                        <strong>
+                          {obtenerCategoriaNombre(curso.categoria)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Precio</span>
+                        <strong>
+                          ${Number(curso.precio || 0).toLocaleString("es-AR")}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Estado</span>
+                        <strong
+                          className={`admin-pill status ${curso.estado?.toLowerCase()}`}
+                        >
+                          {formatearEstado(curso.estado)}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div className="admin-course-actions">
+                      <button
+                        type="button"
+                        className="admin-edit-btn"
+                        onClick={() => cargarCursoParaEditar(curso)}
+                        title="Editar curso"
+                      >
+                        ✎
+                      </button>
+
+                      <button
+                        type="button"
+                        className="admin-delete-btn"
+                        onClick={() => eliminarCurso(curso._id || curso.id)}
+                        title="Eliminar curso"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

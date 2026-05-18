@@ -1,47 +1,76 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./AdminDatosFacturacion.css";
 
 function AdminDatosFacturacion() {
-  const navigate = useNavigate();
-
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [busqueda, setBusqueda] = useState("");
+  const [filtroCondicion, setFiltroCondicion] = useState("");
+
+  const cargarDatosFacturacion = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await api.get("/api/datos-facturacion");
+      const datosRecibidos = response.data.datos || [];
+
+      setDatos(Array.isArray(datosRecibidos) ? datosRecibidos : []);
+    } catch (error) {
+      console.error("Error cargando datos de facturación:", error);
+
+      setError(
+        error.response?.data?.mensaje ||
+          error.response?.data?.error ||
+          "No se pudieron cargar los datos de facturación.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const cargarDatosFacturacion = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await api.get("/api/datos-facturacion");
-
-        const datosRecibidos = response.data.datos || [];
-
-        setDatos(Array.isArray(datosRecibidos) ? datosRecibidos : []);
-      } catch (error) {
-        console.error("Error cargando datos de facturación:", error);
-
-        setError(
-          error.response?.data?.mensaje ||
-            error.response?.data?.error ||
-            "No se pudieron cargar los datos de facturación",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     cargarDatosFacturacion();
   }, []);
 
+  const obtenerNombreCompleto = (usuario = {}) => {
+    const nombreCompleto = `${usuario.nombre || ""} ${
+      usuario.apellido || ""
+    }`.trim();
+
+    return nombreCompleto || "Cliente sin nombre";
+  };
+
+  const obtenerIniciales = (usuario = {}) => {
+    const nombre = usuario.nombre?.trim()?.[0] || "";
+    const apellido = usuario.apellido?.trim()?.[0] || "";
+
+    return `${nombre}${apellido}`.toUpperCase() || "CL";
+  };
+
+  const formatearCondicionFiscal = (condicion) => {
+    if (!condicion) return "-";
+
+    return condicion
+      .toLowerCase()
+      .split("_")
+      .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1))
+      .join(" ");
+  };
+
+  const condicionesDisponibles = useMemo(() => {
+    const condiciones = datos
+      .map((dato) => dato.condicionFiscal)
+      .filter(Boolean);
+
+    return [...new Set(condiciones)];
+  }, [datos]);
+
   const datosFiltrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
-
-    if (!texto) return datos;
 
     return datos.filter((dato) => {
       const usuario = dato.usuario || {};
@@ -56,103 +85,212 @@ function AdminDatosFacturacion() {
         usuario.email,
       ];
 
-      return campos.some((campo) =>
-        String(campo || "")
-          .toLowerCase()
-          .includes(texto),
-      );
+      const coincideBusqueda =
+        !texto ||
+        campos.some((campo) =>
+          String(campo || "")
+            .toLowerCase()
+            .includes(texto),
+        );
+
+      const coincideCondicion =
+        !filtroCondicion || dato.condicionFiscal === filtroCondicion;
+
+      return coincideBusqueda && coincideCondicion;
     });
-  }, [datos, busqueda]);
+  }, [datos, busqueda, filtroCondicion]);
+
+  const totalDatos = datos.length;
+
+  const totalConsumidorFinal = datos.filter((dato) =>
+    String(dato.condicionFiscal || "")
+      .toLowerCase()
+      .includes("consumidor"),
+  ).length;
+
+  const totalResponsables = datos.filter((dato) =>
+    String(dato.condicionFiscal || "")
+      .toLowerCase()
+      .includes("responsable"),
+  ).length;
+
+  const totalConCuit = datos.filter((dato) => dato.cuitCuil).length;
+
+  if (loading) {
+    return (
+      <section className="admin-facturacion-page">
+        <div className="admin-facturacion-shell admin-facturacion-loading">
+          <h1>Datos de facturación</h1>
+          <p>Cargando datos fiscales...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="admin-facturacion-page">
-      <div className="admin-facturacion-container">
-        <button
-          type="button"
-          className="admin-facturacion-back"
-          onClick={() => navigate("/admin")}
-        >
-          ← Volver al panel
-        </button>
-
-        <div className="admin-facturacion-header">
+      <div className="admin-facturacion-shell">
+        <header className="admin-facturacion-header">
           <div>
+            <div className="admin-facturacion-breadcrumb">
+              Dashboard <span>›</span> Datos de facturación
+            </div>
+
             <h1>Datos de facturación</h1>
+
             <p>
               Consultá los datos fiscales cargados por los clientes del sistema.
             </p>
           </div>
+        </header>
 
-          <div className="admin-facturacion-resumen">
-            <span>Total</span>
-            <strong>{datos.length}</strong>
+        {error && (
+          <div className="admin-facturacion-feedback">
+            <div className="admin-facturacion-alert error">{error}</div>
           </div>
-        </div>
+        )}
+
+        <section className="admin-facturacion-stats">
+          <article className="admin-facturacion-stat-card purple">
+            <div className="admin-facturacion-stat-icon">🧾</div>
+
+            <div>
+              <span>Total datos</span>
+              <strong>{totalDatos}</strong>
+              <p>Registros fiscales</p>
+            </div>
+          </article>
+
+          <article className="admin-facturacion-stat-card green">
+            <div className="admin-facturacion-stat-icon">✓</div>
+
+            <div>
+              <span>Con CUIT / CUIL</span>
+              <strong>{totalConCuit}</strong>
+              <p>Datos completos</p>
+            </div>
+          </article>
+
+          <article className="admin-facturacion-stat-card gold">
+            <div className="admin-facturacion-stat-icon">CF</div>
+
+            <div>
+              <span>Consumidor final</span>
+              <strong>{totalConsumidorFinal}</strong>
+              <p>Clientes registrados</p>
+            </div>
+          </article>
+
+          <article className="admin-facturacion-stat-card cyan">
+            <div className="admin-facturacion-stat-icon">RI</div>
+
+            <div>
+              <span>Responsables</span>
+              <strong>{totalResponsables}</strong>
+              <p>Condición fiscal activa</p>
+            </div>
+          </article>
+        </section>
 
         <div className="admin-facturacion-toolbar">
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por cliente, email, CUIT o razón social..."
-          />
+          <div className="admin-facturacion-search">
+            <span>⌕</span>
+
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por cliente, email, CUIT o razón social..."
+            />
+          </div>
+
+          <label className="admin-facturacion-filter">
+            <span>Condición fiscal</span>
+
+            <select
+              value={filtroCondicion}
+              onChange={(e) => setFiltroCondicion(e.target.value)}
+            >
+              <option value="">Todas</option>
+
+              {condicionesDisponibles.map((condicion) => (
+                <option key={condicion} value={condicion}>
+                  {formatearCondicionFiscal(condicion)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            type="button"
+            className="admin-facturacion-secondary-btn"
+            onClick={cargarDatosFacturacion}
+          >
+            ↻ Recargar
+          </button>
         </div>
 
-        {loading && (
-          <p className="admin-facturacion-status">Cargando datos...</p>
-        )}
+        <div className="admin-facturacion-list-card">
+          <div className="admin-facturacion-list-header">
+            <div>
+              <h2>Datos fiscales registrados</h2>
+              <p>Listado general de información fiscal cargada por clientes.</p>
+            </div>
 
-        {!loading && error && (
-          <p className="admin-facturacion-error">{error}</p>
-        )}
-
-        {!loading && !error && datosFiltrados.length === 0 && (
-          <div className="admin-facturacion-vacio">
-            No se encontraron datos de facturación.
+            <span>{datosFiltrados.length} registros</span>
           </div>
-        )}
 
-        {!loading && !error && datosFiltrados.length > 0 && (
-          <div className="admin-facturacion-table-wrapper">
-            <table className="admin-facturacion-table">
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Email</th>
-                  <th>Razón social</th>
-                  <th>CUIT / CUIL</th>
-                  <th>Condición fiscal</th>
-                  <th>Domicilio fiscal</th>
-                </tr>
-              </thead>
+          <div className="admin-facturacion-list">
+            {datosFiltrados.length === 0 ? (
+              <div className="admin-facturacion-empty">
+                No se encontraron datos de facturación.
+              </div>
+            ) : (
+              datosFiltrados.map((dato) => {
+                const usuario = dato.usuario || {};
 
-              <tbody>
-                {datosFiltrados.map((dato) => {
-                  const usuario = dato.usuario || {};
+                return (
+                  <article key={dato._id} className="admin-facturacion-item">
+                    <div className="admin-facturacion-user">
+                      <div className="admin-facturacion-avatar">
+                        {obtenerIniciales(usuario)}
+                      </div>
 
-                  const nombreCompleto = `${usuario.nombre || ""} ${
-                    usuario.apellido || ""
-                  }`.trim();
+                      <div>
+                        <h3>{obtenerNombreCompleto(usuario)}</h3>
+                        <p>{usuario.email || "Sin email"}</p>
+                      </div>
+                    </div>
 
-                  return (
-                    <tr key={dato._id}>
-                      <td>{nombreCompleto || "-"}</td>
-                      <td>{usuario.email || "-"}</td>
-                      <td>{dato.razonSocial || "-"}</td>
-                      <td>{dato.cuitCuil || "-"}</td>
-                      <td>
-                        <span className="admin-facturacion-pill">
-                          {dato.condicionFiscal || "-"}
-                        </span>
-                      </td>
-                      <td>{dato.domicilioFiscal || "-"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    <div className="admin-facturacion-meta">
+                      <div>
+                        <span>Razón social</span>
+                        <strong>{dato.razonSocial || "-"}</strong>
+                      </div>
+
+                      <div>
+                        <span>CUIT / CUIL</span>
+                        <strong>{dato.cuitCuil || "-"}</strong>
+                      </div>
+
+                      <div>
+                        <span>Condición fiscal</span>
+                        <strong className="admin-facturacion-pill">
+                          {formatearCondicionFiscal(dato.condicionFiscal)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Domicilio fiscal</span>
+                        <strong>{dato.domicilioFiscal || "-"}</strong>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </div>
-        )}
+        </div>
       </div>
     </section>
   );
