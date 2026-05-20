@@ -5,8 +5,26 @@ require("dotenv").config();
 
 const app = express();
 
+const origenesPermitidos = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+].filter(Boolean);
+
 // Middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || origenesPermitidos.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origen no permitido por CORS"));
+    },
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -28,7 +46,6 @@ const accesoCursoRoutes = require("./routes/accesoCurso.route");
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/cursos", cursoRoutes);
-
 app.use("/api/lecciones", leccionRoutes);
 app.use("/api/publicaciones", publicacionRoutes);
 app.use("/api/categorias", categoriaRoutes);
@@ -50,6 +67,7 @@ app.get("/", (req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
+
   res.status(500).json({
     error: "Error interno del servidor",
   });

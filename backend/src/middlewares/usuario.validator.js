@@ -23,7 +23,7 @@ const validarId = [
   validarRespuesta,
 ];
 
-const validarRegistro = [
+const reglasRegistroBase = [
   body("nombre")
     .trim()
     .notEmpty()
@@ -45,6 +45,21 @@ const validarRegistro = [
     .withMessage("La contraseña es obligatoria")
     .isLength({ min: 6 })
     .withMessage("La contraseña debe tener al menos 6 caracteres"),
+];
+
+const validarRegistroPublico = [
+  ...reglasRegistroBase,
+
+  body("rol")
+    .not()
+    .exists()
+    .withMessage("No se puede asignar un rol desde el registro público"),
+
+  validarRespuesta,
+];
+
+const validarRegistroAdmin = [
+  ...reglasRegistroBase,
 
   body("rol")
     .optional()
@@ -106,7 +121,9 @@ const validarEditarPerfil = [
 ];
 
 module.exports = {
-  validarRegistro,
+  validarRegistro: validarRegistroPublico,
+  validarRegistroPublico,
+  validarRegistroAdmin,
   validarLogin,
   validarId,
   validarCambioRol,

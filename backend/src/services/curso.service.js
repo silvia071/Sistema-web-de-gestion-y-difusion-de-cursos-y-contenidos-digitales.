@@ -76,7 +76,7 @@ class CursoService {
     }
 
     return await Curso.find(filtroMongo)
-      .sort({ createdAt: -1 })
+      .sort({ fechaCreacion: -1 })
       .populate(populateCategoria)
       .populate(populateLecciones);
   }

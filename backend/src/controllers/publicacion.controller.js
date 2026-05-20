@@ -4,6 +4,33 @@ const EstadoContenido = require("../enums/estadoContenido");
 
 const getPublicaciones = async (req, res) => {
   try {
+    const { categoria } = req.query;
+    const filtros = {};
+
+    if (categoria) {
+      if (!mongoose.Types.ObjectId.isValid(categoria)) {
+        return res.status(400).json({
+          mensaje: "ID de categoría inválido",
+        });
+      }
+
+      filtros.categoria = categoria;
+    }
+
+    const publicaciones =
+      await PublicacionService.listarPublicacionesPublicas(filtros);
+
+    return res.status(200).json(publicaciones);
+  } catch (error) {
+    return res.status(500).json({
+      mensaje: "Error al obtener publicaciones",
+      error: error.message,
+    });
+  }
+};
+
+const getPublicacionesAdmin = async (req, res) => {
+  try {
     const { categoria, estado } = req.query;
     const filtros = {};
 
@@ -41,6 +68,30 @@ const getPublicaciones = async (req, res) => {
 };
 
 const getPublicacionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ mensaje: "ID de publicación inválido" });
+    }
+
+    const publicacion =
+      await PublicacionService.buscarPublicacionPublicaPorId(id);
+
+    if (!publicacion) {
+      return res.status(404).json({ mensaje: "Publicación no encontrada" });
+    }
+
+    return res.status(200).json(publicacion);
+  } catch (error) {
+    return res.status(500).json({
+      mensaje: "Error al buscar publicación",
+      error: error.message,
+    });
+  }
+};
+
+const getPublicacionAdminById = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -230,7 +281,9 @@ const ocultarPublicacion = async (req, res) => {
 
 module.exports = {
   getPublicaciones,
+  getPublicacionesAdmin,
   getPublicacionById,
+  getPublicacionAdminById,
   createPublicacion,
   updatePublicacion,
   deletePublicacion,

@@ -38,7 +38,9 @@ const iniciarSesion = async (req, res) => {
 
 const registrarUsuario = async (req, res) => {
   try {
-    const usuario = await usuarioService.registrarUsuario(req.body);
+    const usuario = await usuarioService.registrarUsuario(req.body, {
+      permitirRol: false,
+    });
 
     return res.status(201).json({
       mensaje: "Usuario registrado correctamente",

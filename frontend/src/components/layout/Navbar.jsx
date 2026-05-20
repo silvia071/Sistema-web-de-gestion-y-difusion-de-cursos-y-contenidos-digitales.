@@ -1,5 +1,5 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useCarrito } from "../../context/CarritoContext";
 import logo from "../../assets/logo.png";
 import "./Navbar.css";
@@ -32,13 +32,17 @@ function obtenerPayloadToken(token) {
 function Navbar() {
   const { cantidadTotal, limpiarCarritoVisual } = useCarrito();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [openUserMenu, setOpenUserMenu] = useState(false);
 
-  useEffect(() => {
+  const cerrarMenuUsuario = () => {
     setOpenUserMenu(false);
-  }, [location.pathname]);
+  };
+
+  const navegarYCerrarMenu = (ruta) => {
+    cerrarMenuUsuario();
+    navigate(ruta);
+  };
 
   const tokenGuardado = localStorage.getItem("token");
 
@@ -66,12 +70,13 @@ function Navbar() {
     localStorage.removeItem("nombreCompleto");
     localStorage.removeItem("carrito");
 
-    setOpenUserMenu(false);
+    cerrarMenuUsuario();
     navigate("/");
   };
 
   const handleCarritoClick = (e) => {
     e.preventDefault();
+    cerrarMenuUsuario();
 
     if (token) {
       navigate("/carrito");
@@ -84,7 +89,7 @@ function Navbar() {
     <header className="navbar">
       <div className="container navbar__content">
         <div className="navbar__logo">
-          <NavLink to="/" className="navbar__brand">
+          <NavLink to="/" className="navbar__brand" onClick={cerrarMenuUsuario}>
             <img src={logo} alt="Mundo Dev" className="navbar__logo-img" />
           </NavLink>
         </div>
@@ -93,6 +98,7 @@ function Navbar() {
           <NavLink
             to="/"
             end
+            onClick={cerrarMenuUsuario}
             className={({ isActive }) =>
               `navbar__link ${isActive ? "active" : ""}`
             }
@@ -102,6 +108,7 @@ function Navbar() {
 
           <NavLink
             to="/cursos"
+            onClick={cerrarMenuUsuario}
             className={({ isActive }) =>
               `navbar__link ${isActive ? "active" : ""}`
             }
@@ -111,6 +118,7 @@ function Navbar() {
 
           <NavLink
             to="/blog"
+            onClick={cerrarMenuUsuario}
             className={({ isActive }) =>
               `navbar__link ${isActive ? "active" : ""}`
             }
@@ -120,6 +128,7 @@ function Navbar() {
 
           <NavLink
             to="/nosotros"
+            onClick={cerrarMenuUsuario}
             className={({ isActive }) =>
               `navbar__link ${isActive ? "active" : ""}`
             }
@@ -129,6 +138,7 @@ function Navbar() {
 
           <NavLink
             to="/contactos"
+            onClick={cerrarMenuUsuario}
             className={({ isActive }) =>
               `navbar__link ${isActive ? "active" : ""}`
             }
@@ -188,7 +198,7 @@ function Navbar() {
                   <button
                     type="button"
                     className="navbar__dropdown-item"
-                    onClick={() => navigate("/perfil")}
+                    onClick={() => navegarYCerrarMenu("/perfil")}
                   >
                     Mi perfil
                   </button>
@@ -198,7 +208,7 @@ function Navbar() {
                       <button
                         type="button"
                         className="navbar__dropdown-item"
-                        onClick={() => navigate("/mis-cursos")}
+                        onClick={() => navegarYCerrarMenu("/mis-cursos")}
                       >
                         Mis cursos
                       </button>
@@ -206,7 +216,7 @@ function Navbar() {
                       <button
                         type="button"
                         className="navbar__dropdown-item"
-                        onClick={() => navigate("/carrito")}
+                        onClick={() => navegarYCerrarMenu("/carrito")}
                       >
                         Mi carrito
                       </button>
@@ -217,7 +227,7 @@ function Navbar() {
                     <button
                       type="button"
                       className="navbar__dropdown-item"
-                      onClick={() => navigate("/admin")}
+                      onClick={() => navegarYCerrarMenu("/admin")}
                     >
                       Panel administrador
                     </button>
@@ -234,7 +244,11 @@ function Navbar() {
               )}
             </div>
           ) : (
-            <NavLink to="/login" className="navbar__button">
+            <NavLink
+              to="/login"
+              className="navbar__button"
+              onClick={cerrarMenuUsuario}
+            >
               Ingresar
             </NavLink>
           )}

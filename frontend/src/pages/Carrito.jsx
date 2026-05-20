@@ -50,11 +50,13 @@ function Carrito() {
 
         setMetodosPago(metodos);
 
-        if (metodos.some((metodo) => metodo.tipo === "TRANSFERENCIA")) {
-          setMetodoPago("TRANSFERENCIA");
-        } else if (metodos[0]?.tipo) {
-          setMetodoPago(metodos[0].tipo);
-        }
+       if (metodos.some((metodo) => metodo.tipo === "TARJETA")) {
+         setMetodoPago("TARJETA");
+       } else if (metodos.some((metodo) => metodo.tipo === "TRANSFERENCIA")) {
+         setMetodoPago("TRANSFERENCIA");
+       } else if (metodos[0]?.tipo) {
+         setMetodoPago(metodos[0].tipo);
+       }
       } catch (error) {
         console.error("Error al obtener métodos de pago:", error);
       }
@@ -242,6 +244,30 @@ function Carrito() {
     });
   };
 
+  const handleEliminarCurso = (item) => {
+    const itemId = item.itemId || item.id || item._id;
+    const tituloCurso = item.titulo || "este curso";
+
+    mostrarModal({
+      titulo: "Eliminar curso",
+      mensaje: `¿Seguro que querés eliminar "${tituloCurso}" del carrito?`,
+      tipo: "warning",
+      accion: async () => {
+        await eliminarDelCarrito(itemId);
+
+        mostrarModal({
+          titulo: "Curso eliminado",
+          mensaje: `"${tituloCurso}" fue eliminado del carrito.`,
+          tipo: "success",
+          textoConfirmar: "Aceptar",
+        });
+      },
+      textoConfirmar: "Sí, eliminar",
+      textoCancelar: "Cancelar",
+      mostrarCancelar: true,
+    });
+  };
+
   return (
     <section className="carrito-page">
       {modal.visible && (
@@ -290,9 +316,22 @@ function Carrito() {
         </div>
 
         {carrito.length > 0 && (
-          <Link to="/cursos" className="carrito-link-cursos">
-            Seguir explorando
-          </Link>
+          <div className="checkout-steps" aria-label="Progreso de compra">
+            <div className="checkout-step checkout-step--active">
+              <span>🛒</span>
+              <p>Carrito</p>
+            </div>
+
+            <div className="checkout-step">
+              <span>💳</span>
+              <p>Pago</p>
+            </div>
+
+            <div className="checkout-step">
+              <span>✓</span>
+              <p>Confirmación</p>
+            </div>
+          </div>
         )}
       </div>
 
@@ -331,9 +370,9 @@ function Carrito() {
                     <h2 className="carrito-item-title">{item.titulo}</h2>
 
                     <div className="carrito-meta">
-                      <span>Online</span>
-                      <span>De por vida</span>
-                      <span>Contenido actualizado</span>
+                      <span>💻 Online</span>
+                      <span>♾️ De por vida</span>
+                      <span>☁️ Contenido actualizado</span>
                     </div>
                   </div>
 
@@ -345,19 +384,32 @@ function Carrito() {
                     <button
                       type="button"
                       className="btn-eliminar"
-                      onClick={() => eliminarDelCarrito(itemId)}
+                      onClick={() => handleEliminarCurso(item)}
+                      aria-label={`Eliminar ${item.titulo}`}
+                      title="Eliminar curso"
                     >
-                      Eliminar
+                      🗑
                     </button>
                   </div>
                 </article>
               );
             })}
+
+            <div className="carrito-cupon">
+              <div className="carrito-cupon-icono">＋</div>
+
+              <div>
+                <h3>¿Tenés un cupón de descuento?</h3>
+                <p>Podés aplicarlo en el siguiente paso de pago.</p>
+              </div>
+
+              <span className="carrito-cupon-flecha">›</span>
+            </div>
           </div>
 
           <aside className="carrito-resumen">
             <div className="resumen-header">
-              <h3>Resumen</h3>
+              <h3>Resumen de tu compra</h3>
               <span>
                 {carrito.length} curso{carrito.length > 1 ? "s" : ""}
               </span>
@@ -374,7 +426,7 @@ function Carrito() {
             </div>
 
             <div className="metodos-pago">
-              <h4>Método de pago</h4>
+              <h4>Elegí tu método de pago</h4>
 
               {metodoExiste("TARJETA") && (
                 <button
@@ -384,14 +436,23 @@ function Carrito() {
                   }`}
                   onClick={() => setMetodoPago("TARJETA")}
                 >
+                  <span className="metodo-radio">
+                    {metodoPago === "TARJETA" && "✓"}
+                  </span>
+
                   <span className="metodo-icono">💳</span>
 
                   <span className="metodo-texto">
-                    <span className="metodo-titulo">Mercado Pago</span>
+                    <span className="metodo-titulo">
+                      Mercado Pago
+                      <small>Más usado</small>
+                    </span>
                     <span className="metodo-descripcion">
                       Pagá con tarjeta, débito o saldo disponible.
                     </span>
                   </span>
+
+                  <span className="metodo-flecha">›</span>
                 </button>
               )}
 
@@ -403,14 +464,23 @@ function Carrito() {
                   }`}
                   onClick={() => setMetodoPago("TRANSFERENCIA")}
                 >
+                  <span className="metodo-radio">
+                    {metodoPago === "TRANSFERENCIA" && "✓"}
+                  </span>
+
                   <span className="metodo-icono">🏦</span>
 
                   <span className="metodo-texto">
-                    <span className="metodo-titulo">Transferencia</span>
+                    <span className="metodo-titulo">
+                      Transferencia bancaria
+                      <small>Aprobación manual</small>
+                    </span>
                     <span className="metodo-descripcion">
                       Pago pendiente de aprobación administrativa.
                     </span>
                   </span>
+
+                  <span className="metodo-flecha">›</span>
                 </button>
               )}
             </div>
@@ -421,7 +491,7 @@ function Carrito() {
               onClick={handleContinuarPago}
               disabled={procesando}
             >
-              {procesando ? "Procesando..." : "Continuar pago"}
+              {procesando ? "Procesando..." : "Continuar al pago →"}
             </button>
 
             <button
@@ -433,9 +503,23 @@ function Carrito() {
             </button>
 
             <div className="carrito-confianza">
-              <span>✓ Compra segura</span>
-              <span>✓ Acceso inmediato</span>
-              <span>✓ Soporte incluido</span>
+              <div>
+                <span>🔒</span>
+                <strong>Compra segura</strong>
+                <p>Tus datos están protegidos</p>
+              </div>
+
+              <div>
+                <span>⚡</span>
+                <strong>Acceso inmediato</strong>
+                <p>Comenzá a aprender enseguida</p>
+              </div>
+
+              <div>
+                <span>🎧</span>
+                <strong>Soporte incluido</strong>
+                <p>Te acompañamos siempre</p>
+              </div>
             </div>
           </aside>
         </div>

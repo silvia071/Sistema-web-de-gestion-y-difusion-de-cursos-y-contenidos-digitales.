@@ -20,7 +20,8 @@ const {
 } = require("../controllers/usuario.controller");
 
 const {
-  validarRegistro,
+  validarRegistroPublico,
+  validarRegistroAdmin,
   validarId,
   validarCambioRol,
   validarEditarPerfil,
@@ -33,7 +34,7 @@ const {
 } = require("../middlewares/verificarMismoUsuarioOAdmin.middleware");
 
 // Públicas
-router.post("/registro", validarRegistro, registrarUsuario);
+router.post("/registro", validarRegistroPublico, registrarUsuario);
 router.post("/login", iniciarSesion);
 
 // Usuario autenticado
@@ -72,7 +73,7 @@ router.post(
   "/",
   verificarToken,
   verificarAdmin,
-  validarRegistro,
+  validarRegistroAdmin,
   registrarUsuario,
 );
 

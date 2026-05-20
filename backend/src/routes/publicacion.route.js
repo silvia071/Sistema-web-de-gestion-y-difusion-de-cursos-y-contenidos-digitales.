@@ -3,7 +3,9 @@ const router = express.Router();
 
 const {
   getPublicaciones,
+  getPublicacionesAdmin,
   getPublicacionById,
+  getPublicacionAdminById,
   createPublicacion,
   updatePublicacion,
   deletePublicacion,
@@ -12,9 +14,23 @@ const {
 } = require("../controllers/publicacion.controller");
 
 const { verificarToken } = require("../middlewares/verificarToken.middleware");
-
 const { verificarAdmin } = require("../middlewares/verificarAdmin.validator");
 
+// Admin: puede ver PUBLICADO, BORRADOR u OCULTO
+router.get(
+  "/admin/todas",
+  verificarToken,
+  verificarAdmin,
+  getPublicacionesAdmin,
+);
+router.get(
+  "/admin/:id",
+  verificarToken,
+  verificarAdmin,
+  getPublicacionAdminById,
+);
+
+// Públicas: solo devuelven publicaciones PUBLICADAS
 router.get("/", getPublicaciones);
 router.get("/:id", getPublicacionById);
 

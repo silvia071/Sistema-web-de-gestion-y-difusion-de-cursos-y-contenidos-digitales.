@@ -1,5 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import api from "../services/api";
 import { getImageUrl } from "../utils/getImageUrl";
 
@@ -13,15 +20,15 @@ export function CarritoProvider({ children }) {
   const [mensajeCarrito, setMensajeCarrito] = useState("");
   const [cargandoCarrito, setCargandoCarrito] = useState(false);
 
-  const haySesion = () => {
+  const haySesion = useCallback(() => {
     const token = localStorage.getItem("token");
 
     return (
       token && token !== "null" && token !== "undefined" && token.trim() !== ""
     );
-  };
+  }, []);
 
-  const normalizarItem = (item) => {
+  const normalizarItem = useCallback((item) => {
     const curso = item.curso || item;
 
     if (!curso) return null;
@@ -37,9 +44,9 @@ export function CarritoProvider({ children }) {
       imagen,
       curso,
     };
-  };
+  }, []);
 
-  const cargarCarritoBackend = async () => {
+  const cargarCarritoBackend = useCallback(async () => {
     if (!haySesion()) {
       setCarritoBackend(null);
       setCarrito([]);
@@ -69,7 +76,7 @@ export function CarritoProvider({ children }) {
     } finally {
       setCargandoCarrito(false);
     }
-  };
+  }, [haySesion, normalizarItem]);
 
   useEffect(() => {
     cargarCarritoBackend();
@@ -83,7 +90,7 @@ export function CarritoProvider({ children }) {
     return () => {
       window.removeEventListener("storage", syncSesion);
     };
-  }, []);
+  }, [cargarCarritoBackend]);
 
   const recargarCarrito = () => {
     cargarCarritoBackend();

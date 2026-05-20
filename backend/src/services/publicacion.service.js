@@ -84,11 +84,34 @@ const listarPublicaciones = async (filtros = {}) => {
     filtroMongo.categoria = filtros.categoria;
   }
 
-  return await Publicacion.find(filtroMongo).populate("categoria");
+  return await Publicacion.find(filtroMongo)
+    .sort({ fechaCreacion: -1 })
+    .populate("categoria");
+};
+
+const listarPublicacionesPublicas = async (filtros = {}) => {
+  const filtroMongo = {
+    estado: EstadoContenido.PUBLICADO,
+  };
+
+  if (filtros.categoria) {
+    filtroMongo.categoria = filtros.categoria;
+  }
+
+  return await Publicacion.find(filtroMongo)
+    .sort({ fechaCreacion: -1 })
+    .populate("categoria");
 };
 
 const buscarPublicacionPorId = async (id) => {
   return await Publicacion.findById(id).populate("categoria");
+};
+
+const buscarPublicacionPublicaPorId = async (id) => {
+  return await Publicacion.findOne({
+    _id: id,
+    estado: EstadoContenido.PUBLICADO,
+  }).populate("categoria");
 };
 
 const publicarPublicacion = async (id) => {
@@ -112,7 +135,9 @@ module.exports = {
   editarPublicacion,
   eliminarPublicacion,
   listarPublicaciones,
+  listarPublicacionesPublicas,
   buscarPublicacionPorId,
+  buscarPublicacionPublicaPorId,
   publicarPublicacion,
   ocultarPublicacion,
 };

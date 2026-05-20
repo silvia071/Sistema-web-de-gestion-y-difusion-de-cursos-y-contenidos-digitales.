@@ -4,7 +4,7 @@ const AccesoCurso = require("../models/accesoCurso.model");
 const EstadoCuenta = require("../enums/estadoCuenta");
 const jwt = require("jsonwebtoken");
 
-const registrarUsuario = async (datos) => {
+const registrarUsuario = async (datos, opciones = {}) => {
   if (!datos.contrasenia) {
     throw new Error("La contraseña es obligatoria");
   }
@@ -26,7 +26,11 @@ const registrarUsuario = async (datos) => {
     contrasenia: contraseniaHasheada,
     direccion: datos.direccion,
     telefono: datos.telefono,
-    rol: datos.rol || "CLIENTE",
+
+    // Seguridad:
+    // - Registro público: siempre CLIENTE.
+    // - Registro desde admin: permite usar el rol enviado.
+    rol: opciones.permitirRol ? datos.rol || "CLIENTE" : "CLIENTE",
   });
 
   return await nuevoUsuario.save();

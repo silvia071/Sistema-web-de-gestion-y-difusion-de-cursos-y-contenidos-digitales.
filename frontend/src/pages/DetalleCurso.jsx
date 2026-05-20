@@ -16,7 +16,7 @@ function DetalleCurso() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { agregarAlCarrito } = useCarrito();
+  const { agregarAlCarrito, mensajeCarrito } = useCarrito();
 
   const [curso, setCurso] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -162,18 +162,27 @@ function DetalleCurso() {
             <p className="detalle-curso-precio">{precioFormateado}</p>
           )}
 
-          {puedeEntrarAlCurso ? (
-            <button className="detalle-curso-btn" onClick={handleEntrarAlCurso}>
-              ▶ Comenzar curso
-            </button>
-          ) : (
-            <button
-              className="detalle-curso-btn"
-              onClick={handleAgregarAlCarrito}
-            >
-              🛒 Agregar al carrito
-            </button>
-          )}
+          <div className="detalle-curso-acciones">
+            {puedeEntrarAlCurso ? (
+              <button
+                className="detalle-curso-btn"
+                onClick={handleEntrarAlCurso}
+              >
+                ▶ Comenzar curso
+              </button>
+            ) : (
+              <button
+                className="detalle-curso-btn"
+                onClick={handleAgregarAlCarrito}
+              >
+                🛒 Agregar al carrito
+              </button>
+            )}
+
+            {mensajeCarrito && (
+              <p className="detalle-curso-mensaje-carrito">{mensajeCarrito}</p>
+            )}
+          </div>
         </div>
 
         <div className="detalle-curso-beneficios">

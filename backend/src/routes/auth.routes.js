@@ -8,10 +8,10 @@ const {
 
 const {
   validarLogin,
-  validarRegistro,
+  validarRegistroPublico,
 } = require("../middlewares/usuario.validator");
 
 router.post("/login", validarLogin, iniciarSesion);
-router.post("/register", validarRegistro, registrarUsuario);
+router.post("/register", validarRegistroPublico, registrarUsuario);
 
 module.exports = router;

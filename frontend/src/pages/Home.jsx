@@ -414,10 +414,19 @@ export default function Home() {
             <h4>Cursos destacados</h4>
 
             <div className="phone-course">
-              <img
-                src={cursos[0] ? construirImagenCurso(cursos[0]) : ""}
-                alt=""
-              />
+              {(() => {
+                const imagenPreview = cursos[0]
+                  ? construirImagenCurso(cursos[0])
+                  : null;
+
+                return imagenPreview ? (
+                  <img
+                    src={imagenPreview}
+                    alt={cursos[0]?.titulo || "Curso destacado"}
+                  />
+                ) : null;
+              })()}
+
               <strong>{cursos[0]?.titulo || "Curso de JavaScript"}</strong>
               <span>⭐ 4.9</span>
               <b>$15.000</b>
