@@ -12,6 +12,7 @@ const crearPago = async (data) => {
   }
 
   const compraExistente = await Compra.findById(compra);
+
   if (!compraExistente) {
     throw new Error("La compra no existe");
   }
@@ -53,9 +54,11 @@ const buscarPagoPorId = async (id) => {
 
 const aprobarPago = async (id) => {
   const pago = await Pago.findById(id);
+
   if (!pago) {
     throw new Error("Pago no encontrado");
   }
+
   if (pago.estado === EstadoPago.APROBADO) {
     return await Pago.findById(id)
       .populate("metodoPago")
@@ -64,6 +67,7 @@ const aprobarPago = async (id) => {
   }
 
   const compra = await Compra.findById(pago.compra).populate("detalles");
+
   if (!compra) {
     throw new Error("Compra no encontrada");
   }
@@ -115,6 +119,7 @@ const aprobarPago = async (id) => {
 
 const rechazarPago = async (id) => {
   const pago = await Pago.findById(id);
+
   if (!pago) {
     throw new Error("Pago no encontrado");
   }
@@ -130,6 +135,7 @@ const rechazarPago = async (id) => {
   await pago.save();
 
   const compra = await Compra.findById(pago.compra);
+
   if (compra) {
     compra.estado = EstadoCompra.CANCELADA;
     await compra.save();
@@ -139,6 +145,58 @@ const rechazarPago = async (id) => {
     .populate("metodoPago")
     .populate("usuario")
     .populate("compra");
+};
+
+const procesarPago = async (pagoId) => {
+  if (!pagoId) {
+    throw new Error("El pagoId es obligatorio");
+  }
+
+  const pago = await Pago.findById(pagoId)
+    .populate("metodoPago")
+    .populate("usuario")
+    .populate("compra");
+
+  if (!pago) {
+    throw new Error("Pago no encontrado");
+  }
+
+  if (!pago.metodoPago) {
+    throw new Error("El pago no tiene método de pago asociado");
+  }
+
+  const tipoMetodo = pago.metodoPago.tipo;
+
+  if (tipoMetodo === "TRANSFERENCIA") {
+    return {
+      tipo: "transferencia",
+      mensaje:
+        "La compra quedó pendiente de aprobación administrativa por transferencia.",
+    };
+  }
+
+  if (tipoMetodo === "TARJETA") {
+    const usarMock =
+      process.env.MP_MOCK === "true" ||
+      !process.env.MP_ACCESS_TOKEN ||
+      process.env.MP_ACCESS_TOKEN === "TU_ACCESS_TOKEN";
+
+    if (!usarMock) {
+      throw new Error(
+        "Mercado Pago real no está configurado en esta versión. Activá MP_MOCK=true para usar pago simulado.",
+      );
+    }
+
+    await aprobarPago(pago._id);
+
+    return {
+      tipo: "mercadopago",
+      init_point: `${process.env.FRONTEND_URL || "http://localhost:5173"}/pago-exitoso`,
+      mensaje: "Pago simulado correctamente.",
+    };
+  }
+
+  throw new Error("Método de pago no soportado");
 };
 
 const listarPagos = async () => {
@@ -164,4 +222,5 @@ module.exports = {
   listarPagos,
   aprobarPago,
   rechazarPago,
+  procesarPago,
 };

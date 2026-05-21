@@ -3,6 +3,8 @@ const ItemCarrito = require("../models/itemCarrito.model");
 const EstadoCarrito = require("../enums/estadoCarrito");
 const Curso = require("../models/curso.model");
 const AccesoCurso = require("../models/accesoCurso.model");
+const Compra = require("../models/compra.model");
+const DetalleCompra = require("../models/detalleCompra.model");
 
 const validarPropietarioCarrito = (carrito, usuarioId) => {
   if (!usuarioId) {
@@ -59,24 +61,9 @@ const obtenerCarritoActivo = async (id, usuarioId) => {
   return carrito;
 };
 
-const agregarCursoAlCarrito = async (idCarrito, idCurso, usuarioId) => {
-  const curso = await Curso.findById(idCurso);
-  if (!curso) throw new Error("Curso no existe");
-  if (curso.estado !== "PUBLICADO") {
-    throw new Error("Este curso no está disponible para la compra");
-  }
-
-  const carrito = await Carrito.findById(idCarrito).populate("items");
-  if (!carrito) throw new Error("Carrito no encontrado");
-
-  validarPropietarioCarrito(carrito, usuarioId);
-
-  if (carrito.estado !== EstadoCarrito.ABIERTO) {
-    throw new Error("Carrito no activo");
-  }
-
+const validarCursoDisponibleParaUsuario = async (usuarioId, idCurso) => {
   const accesoExistente = await AccesoCurso.findOne({
-    usuario: carrito.usuario,
+    usuario: usuarioId,
     curso: idCurso,
     estado: "ACTIVO",
   });
@@ -84,6 +71,54 @@ const agregarCursoAlCarrito = async (idCarrito, idCurso, usuarioId) => {
   if (accesoExistente) {
     throw new Error("Ya tenés acceso a este curso");
   }
+
+  const detallesDelCurso = await DetalleCompra.find({
+    curso: idCurso,
+  }).select("_id");
+
+  const detallesIds = detallesDelCurso.map((detalle) => detalle._id);
+
+  if (detallesIds.length === 0) {
+    return;
+  }
+
+  const compraPendiente = await Compra.findOne({
+    usuario: usuarioId,
+    detalles: { $in: detallesIds },
+    estado: { $in: ["PENDIENTE", "EN_PROCESO"] },
+  });
+
+  if (compraPendiente) {
+    throw new Error(
+      "Ya tenés una compra pendiente de aprobación para este curso",
+    );
+  }
+};
+
+const agregarCursoAlCarrito = async (idCarrito, idCurso, usuarioId) => {
+  const curso = await Curso.findById(idCurso);
+
+  if (!curso) {
+    throw new Error("Curso no existe");
+  }
+
+  if (curso.estado !== "PUBLICADO") {
+    throw new Error("Este curso no está disponible para la compra");
+  }
+
+  const carrito = await Carrito.findById(idCarrito).populate("items");
+
+  if (!carrito) {
+    throw new Error("Carrito no encontrado");
+  }
+
+  validarPropietarioCarrito(carrito, usuarioId);
+
+  if (carrito.estado !== EstadoCarrito.ABIERTO) {
+    throw new Error("Carrito no activo");
+  }
+
+  await validarCursoDisponibleParaUsuario(carrito.usuario, idCurso);
 
   const itemExistente = await ItemCarrito.findOne({
     _id: { $in: carrito.items.map((item) => item._id) },
@@ -112,7 +147,10 @@ const agregarCursoAlCarrito = async (idCarrito, idCurso, usuarioId) => {
 
 const eliminarItemDelCarrito = async (idCarrito, idItem, usuarioId) => {
   const carrito = await Carrito.findById(idCarrito);
-  if (!carrito) throw new Error("Carrito no encontrado");
+
+  if (!carrito) {
+    throw new Error("Carrito no encontrado");
+  }
 
   validarPropietarioCarrito(carrito, usuarioId);
 
@@ -135,7 +173,10 @@ const eliminarItemDelCarrito = async (idCarrito, idItem, usuarioId) => {
 
 const vaciarCarrito = async (idCarrito, usuarioId) => {
   const carrito = await Carrito.findById(idCarrito);
-  if (!carrito) throw new Error("Carrito no encontrado");
+
+  if (!carrito) {
+    throw new Error("Carrito no encontrado");
+  }
 
   validarPropietarioCarrito(carrito, usuarioId);
 
@@ -162,7 +203,10 @@ const vaciarCarrito = async (idCarrito, usuarioId) => {
 
 const calcularTotalCarrito = async (idCarrito, usuarioId) => {
   const carrito = await Carrito.findById(idCarrito).populate("items");
-  if (!carrito) throw new Error("Carrito no encontrado");
+
+  if (!carrito) {
+    throw new Error("Carrito no encontrado");
+  }
 
   validarPropietarioCarrito(carrito, usuarioId);
 

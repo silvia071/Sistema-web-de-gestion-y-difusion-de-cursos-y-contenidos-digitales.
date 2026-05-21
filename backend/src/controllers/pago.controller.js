@@ -252,6 +252,24 @@ const procesarPago = async (req, res) => {
     const tipoMetodo = pago.metodoPago?.tipo;
 
     if (tipoMetodo === "TARJETA") {
+      const usarMock =
+        process.env.MP_MOCK === "true" ||
+        !process.env.MP_ACCESS_TOKEN ||
+        process.env.MP_ACCESS_TOKEN === "TU_ACCESS_TOKEN";
+
+      if (usarMock) {
+        await pagoService.aprobarPago(pago._id);
+
+        return res.status(200).json({
+          mensaje: "Pago simulado correctamente",
+          datos: {
+            tipo: "mercadopago",
+            init_point: `${FRONTEND_URL}/pago-exitoso`,
+            simulado: true,
+          },
+        });
+      }
+
       const preference = new Preference(client);
 
       const response = await preference.create({
@@ -284,6 +302,7 @@ const procesarPago = async (req, res) => {
         datos: {
           tipo: "mercadopago",
           init_point: response.init_point,
+          simulado: false,
         },
       });
     }

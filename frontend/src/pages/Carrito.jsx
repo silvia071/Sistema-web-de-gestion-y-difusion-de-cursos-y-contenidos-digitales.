@@ -23,8 +23,10 @@ function Carrito() {
   const location = useLocation();
 
   const [metodoPago, setMetodoPago] = useState("TRANSFERENCIA");
+  const [metodoPagoVisual, setMetodoPagoVisual] = useState("TRANSFERENCIA");
   const [metodosPago, setMetodosPago] = useState([]);
   const [procesando, setProcesando] = useState(false);
+  const [procesandoPagoVisual, setProcesandoPagoVisual] = useState(false);
 
   const [modal, setModal] = useState({
     visible: false,
@@ -50,13 +52,16 @@ function Carrito() {
 
         setMetodosPago(metodos);
 
-       if (metodos.some((metodo) => metodo.tipo === "TARJETA")) {
-         setMetodoPago("TARJETA");
-       } else if (metodos.some((metodo) => metodo.tipo === "TRANSFERENCIA")) {
-         setMetodoPago("TRANSFERENCIA");
-       } else if (metodos[0]?.tipo) {
-         setMetodoPago(metodos[0].tipo);
-       }
+        if (metodos.some((metodo) => metodo.tipo === "TARJETA")) {
+          setMetodoPago("TARJETA");
+          setMetodoPagoVisual("MERCADO_PAGO");
+        } else if (metodos.some((metodo) => metodo.tipo === "TRANSFERENCIA")) {
+          setMetodoPago("TRANSFERENCIA");
+          setMetodoPagoVisual("TRANSFERENCIA");
+        } else if (metodos[0]?.tipo) {
+          setMetodoPago(metodos[0].tipo);
+          setMetodoPagoVisual(metodos[0].tipo);
+        }
       } catch (error) {
         console.error("Error al obtener métodos de pago:", error);
       }
@@ -71,6 +76,13 @@ function Carrito() {
 
   const metodoExiste = (tipo) =>
     metodosPago.some((metodo) => metodo.tipo === tipo);
+
+  const seleccionarMetodoPago = (visual, backend) => {
+    if (procesando || procesandoPagoVisual) return;
+
+    setMetodoPagoVisual(visual);
+    setMetodoPago(backend);
+  };
 
   const mostrarModal = ({
     titulo,
@@ -117,6 +129,8 @@ function Carrito() {
   };
 
   const handleContinuarPago = async () => {
+    if (procesando || procesandoPagoVisual) return;
+
     try {
       setProcesando(true);
 
@@ -195,34 +209,72 @@ function Carrito() {
       const resultadoPago = resultadoPagoResponse.datos;
 
       if (resultadoPago?.tipo === "mercadopago" && resultadoPago?.init_point) {
-        window.location.href = resultadoPago.init_point;
+        setProcesandoPagoVisual(true);
+        setProcesando(false);
+
+        setTimeout(() => {
+          window.location.href = resultadoPago.init_point;
+        }, 3000);
+
         return;
       }
 
       if (resultadoPago?.tipo === "transferencia") {
-        limpiarCarritoVisual();
-        navigate("/pago-pendiente");
+        setProcesandoPagoVisual(true);
+        setProcesando(false);
+
+        setTimeout(() => {
+          limpiarCarritoVisual();
+          navigate("/pago-pendiente", { replace: true });
+        }, 3000);
+
         return;
       }
 
-      limpiarCarritoVisual();
+      setProcesandoPagoVisual(true);
+      setProcesando(false);
 
-      mostrarModal({
-        titulo: "Compra generada",
-        mensaje: "La compra fue generada correctamente.",
-        tipo: "success",
-        accion: () => navigate("/mis-cursos"),
-        textoConfirmar: "Ver mis cursos",
-      });
+      setTimeout(() => {
+        limpiarCarritoVisual();
+
+        mostrarModal({
+          titulo: "Compra generada",
+          mensaje: "La compra fue generada correctamente.",
+          tipo: "success",
+          accion: () => navigate("/mis-cursos"),
+          textoConfirmar: "Ver mis cursos",
+        });
+
+        setProcesandoPagoVisual(false);
+      }, 1600);
     } catch (error) {
       console.error("Error al finalizar compra:", error);
 
+      setProcesandoPagoVisual(false);
+
+      const mensajeBackend =
+        error.response?.data?.mensaje ||
+        error.message ||
+        "Ocurrió un error al finalizar la compra.";
+
+      if (mensajeBackend === "Carrito no activo") {
+        limpiarCarritoVisual();
+
+        mostrarModal({
+          titulo: "Carrito vencido",
+          mensaje:
+            "El carrito anterior ya no está activo. Volvé a agregar el curso para continuar.",
+          tipo: "warning",
+          accion: () => navigate("/cursos"),
+          textoConfirmar: "Ver cursos",
+        });
+
+        return;
+      }
+
       mostrarModal({
         titulo: "Error al finalizar la compra",
-        mensaje:
-          error.response?.data?.mensaje ||
-          error.message ||
-          "Ocurrió un error al finalizar la compra.",
+        mensaje: mensajeBackend,
         tipo: "error",
       });
     } finally {
@@ -231,6 +283,8 @@ function Carrito() {
   };
 
   const handleVaciarCarrito = () => {
+    if (procesando || procesandoPagoVisual) return;
+
     mostrarModal({
       titulo: "Vaciar carrito",
       mensaje: "¿Seguro que querés eliminar todos los cursos del carrito?",
@@ -245,6 +299,8 @@ function Carrito() {
   };
 
   const handleEliminarCurso = (item) => {
+    if (procesando || procesandoPagoVisual) return;
+
     const itemId = item.itemId || item.id || item._id;
     const tituloCurso = item.titulo || "este curso";
 
@@ -270,7 +326,26 @@ function Carrito() {
 
   return (
     <section className="carrito-page">
-      {modal.visible && (
+      {procesandoPagoVisual && (
+        <div className="carrito-modal-overlay">
+          <div className="carrito-modal carrito-modal-info carrito-modal-procesando">
+            <div className="carrito-loader"></div>
+
+            <h2>
+              Procesando pago
+              <span className="puntos-cargando">
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+              </span>
+            </h2>
+
+            <p>Estamos validando la operación. Aguarde un momento.</p>
+          </div>
+        </div>
+      )}
+
+      {modal.visible && !procesandoPagoVisual && (
         <div className="carrito-modal-overlay">
           <div className={`carrito-modal carrito-modal-${modal.tipo}`}>
             <div className="carrito-modal-icon">
@@ -387,6 +462,7 @@ function Carrito() {
                       onClick={() => handleEliminarCurso(item)}
                       aria-label={`Eliminar ${item.titulo}`}
                       title="Eliminar curso"
+                      disabled={procesando || procesandoPagoVisual}
                     >
                       🗑
                     </button>
@@ -432,12 +508,15 @@ function Carrito() {
                 <button
                   type="button"
                   className={`metodo-opcion ${
-                    metodoPago === "TARJETA" ? "activo" : ""
+                    metodoPagoVisual === "MERCADO_PAGO" ? "activo" : ""
                   }`}
-                  onClick={() => setMetodoPago("TARJETA")}
+                  onClick={() =>
+                    seleccionarMetodoPago("MERCADO_PAGO", "TARJETA")
+                  }
+                  disabled={procesando || procesandoPagoVisual}
                 >
                   <span className="metodo-radio">
-                    {metodoPago === "TARJETA" && "✓"}
+                    {metodoPagoVisual === "MERCADO_PAGO" && "✓"}
                   </span>
 
                   <span className="metodo-icono">💳</span>
@@ -456,16 +535,52 @@ function Carrito() {
                 </button>
               )}
 
+              {metodoExiste("TARJETA") && (
+                <button
+                  type="button"
+                  className={`metodo-opcion ${
+                    metodoPagoVisual === "TARJETA_DEBITO_CREDITO"
+                      ? "activo"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    seleccionarMetodoPago("TARJETA_DEBITO_CREDITO", "TARJETA")
+                  }
+                  disabled={procesando || procesandoPagoVisual}
+                >
+                  <span className="metodo-radio">
+                    {metodoPagoVisual === "TARJETA_DEBITO_CREDITO" && "✓"}
+                  </span>
+
+                  <span className="metodo-icono">💳</span>
+
+                  <span className="metodo-texto">
+                    <span className="metodo-titulo">
+                      Tarjeta de crédito / débito
+                      <small>Cuotas</small>
+                    </span>
+                    <span className="metodo-descripcion">
+                      Visa, Mastercard y más.
+                    </span>
+                  </span>
+
+                  <span className="metodo-flecha">›</span>
+                </button>
+              )}
+
               {metodoExiste("TRANSFERENCIA") && (
                 <button
                   type="button"
                   className={`metodo-opcion ${
-                    metodoPago === "TRANSFERENCIA" ? "activo" : ""
+                    metodoPagoVisual === "TRANSFERENCIA" ? "activo" : ""
                   }`}
-                  onClick={() => setMetodoPago("TRANSFERENCIA")}
+                  onClick={() =>
+                    seleccionarMetodoPago("TRANSFERENCIA", "TRANSFERENCIA")
+                  }
+                  disabled={procesando || procesandoPagoVisual}
                 >
                   <span className="metodo-radio">
-                    {metodoPago === "TRANSFERENCIA" && "✓"}
+                    {metodoPagoVisual === "TRANSFERENCIA" && "✓"}
                   </span>
 
                   <span className="metodo-icono">🏦</span>
@@ -483,24 +598,61 @@ function Carrito() {
                   <span className="metodo-flecha">›</span>
                 </button>
               )}
+
+              {metodoExiste("TARJETA") && (
+                <button
+                  type="button"
+                  className={`metodo-opcion ${
+                    metodoPagoVisual === "PAYPAL" ? "activo" : ""
+                  }`}
+                  onClick={() => seleccionarMetodoPago("PAYPAL", "TARJETA")}
+                  disabled={procesando || procesandoPagoVisual}
+                >
+                  <span className="metodo-radio">
+                    {metodoPagoVisual === "PAYPAL" && "✓"}
+                  </span>
+
+                  <span className="metodo-icono">🅿️</span>
+
+                  <span className="metodo-texto">
+                    <span className="metodo-titulo">
+                      PayPal o billetera digital
+                    </span>
+                    <span className="metodo-descripcion">
+                      Pagá de forma rápida y segura.
+                    </span>
+                  </span>
+
+                  <span className="metodo-flecha">›</span>
+                </button>
+              )}
             </div>
 
             <button
               type="button"
               className="btn-finalizar"
               onClick={handleContinuarPago}
-              disabled={procesando}
+              disabled={procesando || procesandoPagoVisual}
             >
-              {procesando ? "Procesando..." : "Continuar al pago →"}
+              {procesando || procesandoPagoVisual
+                ? "Procesando pago..."
+                : "Continuar al pago →"}
             </button>
 
-            <button
-              type="button"
-              className="btn-vaciar"
-              onClick={handleVaciarCarrito}
-            >
-              Vaciar carrito
-            </button>
+            <div className="resumen-botones-secundarios">
+              <button
+                type="button"
+                className="btn-vaciar btn-vaciar-carrito"
+                onClick={handleVaciarCarrito}
+                disabled={procesando || procesandoPagoVisual}
+              >
+                Vaciar carrito
+              </button>
+
+              <Link to="/cursos" className="btn-vaciar btn-seguir-explorando">
+                🛍️ Seguir explorando
+              </Link>
+            </div>
 
             <div className="carrito-confianza">
               <div>

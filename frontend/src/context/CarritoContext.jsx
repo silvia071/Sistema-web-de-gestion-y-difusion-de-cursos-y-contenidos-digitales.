@@ -46,10 +46,19 @@ export function CarritoProvider({ children }) {
     };
   }, []);
 
+  const limpiarEstadoCarrito = useCallback(() => {
+    setCarrito([]);
+    setCarritoBackend(null);
+    setMensajeCarrito("");
+
+    Object.keys(localStorage)
+      .filter((key) => key.toLowerCase().includes("carrito"))
+      .forEach((key) => localStorage.removeItem(key));
+  }, []);
+
   const cargarCarritoBackend = useCallback(async () => {
     if (!haySesion()) {
-      setCarritoBackend(null);
-      setCarrito([]);
+      limpiarEstadoCarrito();
       setCargandoCarrito(false);
       return null;
     }
@@ -70,13 +79,12 @@ export function CarritoProvider({ children }) {
       return data;
     } catch (error) {
       console.error("Error al cargar carrito:", error);
-      setCarritoBackend(null);
-      setCarrito([]);
+      limpiarEstadoCarrito();
       return null;
     } finally {
       setCargandoCarrito(false);
     }
-  }, [haySesion, normalizarItem]);
+  }, [haySesion, limpiarEstadoCarrito, normalizarItem]);
 
   useEffect(() => {
     cargarCarritoBackend();
@@ -108,6 +116,20 @@ export function CarritoProvider({ children }) {
     return carrito.some((item) => String(item.id) === String(id));
   };
 
+  const crearOCargarCarritoActivo = async () => {
+    const { data } = await api.post("/api/carrito");
+
+    setCarritoBackend(data);
+
+    const itemsNormalizados = Array.isArray(data.items)
+      ? data.items.map((item) => normalizarItem(item)).filter(Boolean)
+      : [];
+
+    setCarrito(itemsNormalizados);
+
+    return data;
+  };
+
   const agregarAlCarrito = async (producto) => {
     if (!haySesion()) {
       mostrarMensaje("Para agregar cursos al carrito tenés que iniciar sesión");
@@ -130,7 +152,7 @@ export function CarritoProvider({ children }) {
       let carritoActual = carritoBackend;
 
       if (!carritoActual?._id) {
-        carritoActual = await cargarCarritoBackend();
+        carritoActual = await crearOCargarCarritoActivo();
       }
 
       if (!carritoActual?._id) {
@@ -158,12 +180,48 @@ export function CarritoProvider({ children }) {
     } catch (error) {
       console.error("Error al agregar al carrito:", error);
 
-      mostrarMensaje(
+      const mensaje =
         error.response?.data?.error ||
-          error.response?.data?.mensaje ||
-          "No se pudo agregar el curso al carrito",
-      );
+        error.response?.data?.mensaje ||
+        "No se pudo agregar el curso al carrito";
 
+      if (mensaje === "Carrito no activo") {
+        try {
+          limpiarEstadoCarrito();
+
+          const nuevoCarrito = await crearOCargarCarritoActivo();
+
+          const { data } = await api.post(
+            `/api/carrito/${nuevoCarrito._id}/item`,
+            {
+              idCurso,
+            },
+          );
+
+          setCarritoBackend(data);
+
+          const itemsNormalizados = Array.isArray(data.items)
+            ? data.items.map((item) => normalizarItem(item)).filter(Boolean)
+            : [];
+
+          setCarrito(itemsNormalizados);
+
+          mostrarMensaje("Curso agregado al carrito");
+          return true;
+        } catch (nuevoError) {
+          console.error("Error al crear un nuevo carrito:", nuevoError);
+
+          mostrarMensaje(
+            nuevoError.response?.data?.error ||
+              nuevoError.response?.data?.mensaje ||
+              "No se pudo crear un nuevo carrito",
+          );
+
+          return false;
+        }
+      }
+
+      mostrarMensaje(mensaje);
       return false;
     }
   };
@@ -193,53 +251,52 @@ export function CarritoProvider({ children }) {
       setCarrito(itemsNormalizados);
     } catch (error) {
       console.error("Error al eliminar item del carrito:", error);
-      mostrarMensaje("No se pudo eliminar el curso");
+
+      const mensaje =
+        error.response?.data?.error ||
+        error.response?.data?.mensaje ||
+        "No se pudo eliminar el curso";
+
+      if (mensaje === "Carrito no activo") {
+        limpiarEstadoCarrito();
+        mostrarMensaje("El carrito anterior ya no estaba activo");
+        return;
+      }
+
+      mostrarMensaje(mensaje);
     }
   };
 
   const vaciarCarrito = async () => {
     if (!carritoBackend?._id) {
-      setCarrito([]);
+      limpiarEstadoCarrito();
       return;
     }
 
     try {
       await api.delete(`/api/carrito/${carritoBackend._id}/vaciar`);
 
-      setCarritoBackend((prev) =>
-        prev
-          ? {
-              ...prev,
-              items: [],
-            }
-          : null,
-      );
-
-      setCarrito([]);
+      limpiarEstadoCarrito();
     } catch (error) {
       console.error("Error al vaciar carrito:", error);
 
-      mostrarMensaje(
+      const mensaje =
         error.response?.data?.error ||
-          error.response?.data?.mensaje ||
-          "No se pudo vaciar el carrito",
-      );
+        error.response?.data?.mensaje ||
+        "No se pudo vaciar el carrito";
+
+      if (mensaje === "Carrito no activo") {
+        limpiarEstadoCarrito();
+        mostrarMensaje("El carrito anterior ya no estaba activo");
+        return;
+      }
+
+      mostrarMensaje(mensaje);
     }
   };
 
   const limpiarCarritoVisual = () => {
-    setCarrito([]);
-
-    setCarritoBackend((prev) =>
-      prev
-        ? {
-            ...prev,
-            items: [],
-          }
-        : null,
-    );
-
-    setMensajeCarrito("");
+    limpiarEstadoCarrito();
   };
 
   const cantidadTotal = useMemo(() => carrito.length, [carrito]);

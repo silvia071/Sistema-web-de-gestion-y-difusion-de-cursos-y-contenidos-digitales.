@@ -1,7 +1,3 @@
-/* =========================
-   PÁGINA CURSOS
-========================= */
-
 .cursos-page {
   min-height: 100vh;
   padding-bottom: 60px;
@@ -65,8 +61,7 @@
 
 .cursos-hero__text {
   max-width: 840px;
-  padding-left: 56px;
-}
+  padding-left:35px}
 
 .cursos-hero__badge {
   display: inline-flex;

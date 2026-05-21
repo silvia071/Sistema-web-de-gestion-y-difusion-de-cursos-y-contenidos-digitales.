@@ -3,17 +3,51 @@ const DetalleCompra = require("../models/detalleCompra.model");
 const AccesoCurso = require("../models/accesoCurso.model");
 const EstadoCompra = require("../enums/estadoCompra");
 
-const generarCompraDesdeCarrito = async (carrito, usuarioId) => {
-  if (!carrito || !carrito.items || carrito.items.length === 0) {
-    throw new Error("El carrito está vacío");
+const ESTADOS_COMPRA_PENDIENTES = [EstadoCompra.PENDIENTE, "EN_PROCESO"];
+
+const validarCompraPendiente = async (usuarioId, cursoId) => {
+  const detallesDelCurso = await DetalleCompra.find({
+    curso: cursoId,
+  }).select("_id");
+
+  const detallesIds = detallesDelCurso.map((detalle) => detalle._id);
+
+  if (detallesIds.length === 0) {
+    return;
   }
 
+  const compraPendiente = await Compra.findOne({
+    usuario: usuarioId,
+    detalles: { $in: detallesIds },
+    estado: { $in: ESTADOS_COMPRA_PENDIENTES },
+  });
+
+  if (compraPendiente) {
+    throw new Error(
+      "Ya tenés una compra pendiente de aprobación para uno de los cursos del carrito",
+    );
+  }
+};
+
+const generarCompraDesdeCarrito = async (carrito, usuarioId) => {
   if (!usuarioId) {
     throw new Error("El usuario es obligatorio");
   }
-if (!carrito.usuario || carrito.usuario.toString() !== usuarioId.toString()) {
-  throw new Error("No tenés permiso para generar una compra con este carrito");
-}
+
+  if (!carrito) {
+    throw new Error("Carrito no encontrado");
+  }
+
+  if (!carrito.usuario || carrito.usuario.toString() !== usuarioId.toString()) {
+    throw new Error(
+      "No tenés permiso para generar una compra con este carrito",
+    );
+  }
+
+  if (!carrito.items || carrito.items.length === 0) {
+    throw new Error("El carrito está vacío");
+  }
+
   let subtotal = 0;
   const detallesIds = [];
 
@@ -38,16 +72,10 @@ if (!carrito.usuario || carrito.usuario.toString() !== usuarioId.toString()) {
       throw new Error("Ya tenés acceso a uno de los cursos del carrito");
     }
 
+    await validarCompraPendiente(usuarioId, cursoId);
+
     const subtotalDetalle = Number(item.precioUnitario);
 
-   if (
-     !carrito.usuario ||
-     carrito.usuario.toString() !== usuarioId.toString()
-   ) {
-     throw new Error(
-       "No tenés permiso para generar una compra con este carrito",
-     );
-   }
     const detalle = await DetalleCompra.create({
       curso: cursoId,
       precioUnitario: item.precioUnitario,
@@ -76,7 +104,12 @@ if (!carrito.usuario || carrito.usuario.toString() !== usuarioId.toString()) {
 
   return await Compra.findById(compra._id)
     .populate("usuario")
-    .populate("detalles");
+    .populate({
+      path: "detalles",
+      populate: {
+        path: "curso",
+      },
+    });
 };
 
 const eliminarCompra = async (compraId) => {

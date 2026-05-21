@@ -79,6 +79,9 @@ export default function Home() {
     return getImageUrl(limpia);
   };
 
+  const primerCurso = cursos[0];
+  const imagenPreview = primerCurso ? construirImagenCurso(primerCurso) : null;
+
   return (
     <main className="home-page">
       <section className="hero-home">
@@ -109,7 +112,7 @@ export default function Home() {
               </Link>
 
               <a
-                href="#como"
+                href="#como-funciona"
                 className="hero-home__btn hero-home__btn--secondary"
               >
                 ¿Cómo funciona?
@@ -203,7 +206,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="benefits-strip" id="como">
+      <section className="benefits-strip">
         <div className="benefits-strip__grid">
           <article className="benefit-item">
             <div className="benefit-item__icon">📘</div>
@@ -247,7 +250,8 @@ export default function Home() {
         <div className="container">
           <div className="featured-courses__header">
             <div>
-              <h2>Cursos destacados</h2>
+              <span className="section-eyebrow">CURSOS DESTACADOS</span>
+              <h2>Cursos destacados.</h2>
               <p>Una selección de contenidos para empezar hoy.</p>
             </div>
 
@@ -351,23 +355,85 @@ export default function Home() {
           )}
         </div>
       </section>
-      <section className="home-cta">
-        <div className="home-cta__content">
-          <div className="home-cta__icon">🎓</div>
 
-          <div>
-            <h2>¿Listo para comenzar?</h2>
-            <p>Unite a miles de estudiantes y empezá a aprender hoy mismo.</p>
+      <section className="how-home" id="como-funciona">
+        <div className="how-home__container">
+          <span className="section-eyebrow">CÓMO FUNCIONA</span>
+
+          <div className="how-home__header">
+            <h2>Aprender es fácil.</h2>
+            <p>Elegí un curso, accedé al contenido y avanzá a tu ritmo.</p>
           </div>
 
-          <Link to="/cursos" className="home-cta__btn">
-            Explorar cursos
-          </Link>
+          <div className="how-home__steps">
+            <article className="how-step">
+              <span className="how-step__number">1</span>
+
+              <div className="how-step__icon">🛒</div>
+
+              <div>
+                <h3>Elegí tu curso</h3>
+                <p>
+                  Explorá nuestra biblioteca y elegí el contenido ideal para
+                  vos.
+                </p>
+              </div>
+            </article>
+
+            <article className="how-step">
+              <span className="how-step__number">2</span>
+
+              <div className="how-step__icon">▶</div>
+
+              <div>
+                <h3>Accedé al contenido</h3>
+                <p>
+                  Disfrutá lecciones claras, recursos y ejercicios prácticos.
+                </p>
+              </div>
+            </article>
+
+            <article className="how-step">
+              <span className="how-step__number">3</span>
+
+              <div className="how-step__icon">🚀</div>
+
+              <div>
+                <h3>Aprendé a tu ritmo</h3>
+                <p>
+                  Avanzá cuando quieras y aplicá lo aprendido en proyectos
+                  reales.
+                </p>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
+
       <section className="mobile-preview">
+        <div className="mobile-preview__intro">
+          <span className="section-eyebrow">APRENDÉ DESDE CUALQUIER LUGAR</span>
+
+          <h2>
+            Tu plataforma,
+            <br />
+            siempre con vos.
+          </h2>
+
+          <p>
+            Accedé a tus cursos desde cualquier dispositivo. Sin límites, sin
+            horarios y con una experiencia pensada para aprender mejor.
+          </p>
+
+          <div className="mobile-preview__features">
+            <span>✓ 100% responsive</span>
+            <span>✓ Contenido siempre disponible</span>
+            <span>✓ Experiencia simple y moderna</span>
+          </div>
+        </div>
+
         <div className="mobile-preview__grid">
-          <div className="phone-mockup">
+          <div className="phone-mockup phone-mockup--small">
             <div className="phone-mockup__top">
               <span className="phone-logo">{"{MD}"}</span>
               <span>☰</span>
@@ -391,21 +457,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="phone-mockup">
-            <div className="phone-mockup__top">
-              <span>‹</span>
-              <span>☰</span>
-            </div>
-
-            <h4>Aprendé a tu ritmo</h4>
-
-            <div className="phone-feature">📘 Accedé cuando quieras</div>
-            <div className="phone-feature">📄 Certificados incluidos</div>
-            <div className="phone-feature">∞ Acceso ilimitado</div>
-            <div className="phone-feature">🎧 Soporte disponible</div>
-          </div>
-
-          <div className="phone-mockup">
+          <div className="phone-mockup phone-mockup--main">
             <div className="phone-mockup__top">
               <span>‹</span>
               <span>☰</span>
@@ -414,27 +466,23 @@ export default function Home() {
             <h4>Cursos destacados</h4>
 
             <div className="phone-course">
-              {(() => {
-                const imagenPreview = cursos[0]
-                  ? construirImagenCurso(cursos[0])
-                  : null;
+              {imagenPreview && (
+                <img
+                  src={imagenPreview}
+                  alt={primerCurso?.titulo || "Curso destacado"}
+                />
+              )}
 
-                return imagenPreview ? (
-                  <img
-                    src={imagenPreview}
-                    alt={cursos[0]?.titulo || "Curso destacado"}
-                  />
-                ) : null;
-              })()}
-
-              <strong>{cursos[0]?.titulo || "Curso de JavaScript"}</strong>
+              <strong>{primerCurso?.titulo || "Curso de JavaScript"}</strong>
               <span>⭐ 4.9</span>
-              <b>$15.000</b>
+              <b>
+                ${Number(primerCurso?.precio || 15000).toLocaleString("es-AR")}
+              </b>
               <button>Ver curso</button>
             </div>
           </div>
 
-          <div className="phone-mockup">
+          <div className="phone-mockup phone-mockup--small">
             <div className="phone-mockup__top">
               <span>‹</span>
               <span>☰</span>
@@ -451,6 +499,21 @@ export default function Home() {
             <div className="phone-mini-card">DISEÑO · UI/UX Diseño Web</div>
             <div className="phone-mini-card">MARKETING · Marketing Digital</div>
           </div>
+        </div>
+      </section>
+
+      <section className="home-cta">
+        <div className="home-cta__content">
+          <div className="home-cta__icon">🎓</div>
+
+          <div>
+            <h2>¿Listo para comenzar?</h2>
+            <p>Unite a miles de estudiantes y empezá a aprender hoy mismo.</p>
+          </div>
+
+          <Link to="/cursos" className="home-cta__btn">
+            Explorar cursos →
+          </Link>
         </div>
       </section>
     </main>

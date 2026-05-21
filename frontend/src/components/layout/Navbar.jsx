@@ -99,6 +99,10 @@ function Navbar() {
         <div className="navbar__logo">
           <NavLink to="/" className="navbar__brand" onClick={cerrarMenuUsuario}>
             <img src={logo} alt="Mundo Dev" className="navbar__logo-img" />
+
+            <span className="navbar__brand-text">
+              MUNDO <strong>DEV</strong>
+            </span>
           </NavLink>
         </div>
 
