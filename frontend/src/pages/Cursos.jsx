@@ -587,8 +587,25 @@ function Cursos() {
                     <p>{curso.descripcion}</p>
 
                     <div className="curso-card__meta">
-                      <span className="curso-card__rating">★ 4.9</span>
-                      <span>👥 +1.000 estudiantes</span>
+                      {Number(curso.promedioResenias || 0) > 0 ? (
+                        <>
+                          <span className="curso-card__rating">
+                            ★ {Number(curso.promedioResenias).toFixed(1)}
+                          </span>
+
+                          <span>
+                            {curso.cantidadResenias}{" "}
+                            {Number(curso.cantidadResenias) === 1
+                              ? "reseña"
+                              : "reseñas"}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="curso-card__rating">★ Nuevo</span>
+                          <span>Sin reseñas</span>
+                        </>
+                      )}
                     </div>
 
                     <div className="curso-card__precio">

@@ -4,12 +4,41 @@ const NivelCurso = require("../enums/nivelCurso");
 
 const esObjectIdValido = (id) => mongoose.Types.ObjectId.isValid(id);
 const EstadoContenido = require("../enums/estadoContenido");
-
+const reseniaService = require("../services/resenia.service");
 const esErrorDeNegocioCurso = (mensaje) => {
   return [
     "El curso debe tener una categoría",
     "La categoría indicada no existe",
   ].includes(mensaje);
+};
+
+const agregarResumenResenias = async (cursos) => {
+  const listaCursos = Array.isArray(cursos) ? cursos : [cursos];
+
+  const cursosIds = listaCursos
+    .map((curso) => curso?._id)
+    .filter(Boolean)
+    .map((id) => String(id));
+
+  const resumenes = await reseniaService.obtenerResumenesPorCursos(cursosIds);
+
+  const cursosConResumen = listaCursos.map((curso) => {
+    const cursoPlano =
+      typeof curso.toObject === "function" ? curso.toObject() : curso;
+
+    const resumen = resumenes[String(cursoPlano._id)] || {
+      promedio: 0,
+      cantidad: 0,
+    };
+
+    return {
+      ...cursoPlano,
+      promedioResenias: resumen.promedio,
+      cantidadResenias: resumen.cantidad,
+    };
+  });
+
+  return Array.isArray(cursos) ? cursosConResumen : cursosConResumen[0];
 };
 
 const crearCurso = async (req, res) => {
@@ -204,12 +233,12 @@ const listarCursos = async (req, res) => {
 
       filtros.categoria = categoria;
     }
-
     const cursos = await cursoService.listarCursos(filtros);
+    const cursosConResumen = await agregarResumenResenias(cursos);
 
     return res.status(200).json({
       mensaje: "Cursos obtenidos correctamente",
-      datos: cursos,
+      datos: cursosConResumen,
     });
   } catch (error) {
     return res.status(500).json({
@@ -248,10 +277,10 @@ const listarCursosAdmin = async (req, res) => {
     }
 
     const cursos = await cursoService.listarCursos(filtros);
-
+    const cursosConResumen = await agregarResumenResenias(cursos);
     return res.status(200).json({
       mensaje: "Cursos obtenidos correctamente",
-      datos: cursos,
+      datos: cursosConResumen,
     });
   } catch (error) {
     return res.status(500).json({
@@ -287,9 +316,11 @@ const buscarCursoPorId = async (req, res) => {
       });
     }
 
+    const cursoConResumen = await agregarResumenResenias(curso);
+
     return res.status(200).json({
       mensaje: "Curso obtenido correctamente",
-      datos: curso,
+      datos: cursoConResumen,
     });
   } catch (error) {
     return res.status(500).json({

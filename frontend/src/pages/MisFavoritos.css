@@ -358,3 +358,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+.mis-favoritos-card__rating {
+  margin: 0 0 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.mis-favoritos-card__rating span {
+  color: #fbbf24;
+}
+
+.mis-favoritos-card__rating small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+  font-weight: 700;
+}

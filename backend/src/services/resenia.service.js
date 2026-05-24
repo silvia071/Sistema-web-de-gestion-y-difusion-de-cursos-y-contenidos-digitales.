@@ -209,6 +209,40 @@ const eliminarResenia = async (usuarioId, reseniaId) => {
   return resenia;
 };
 
+const obtenerResumenesPorCursos = async (cursosIds) => {
+  const idsValidos = cursosIds
+    .filter((id) => mongoose.Types.ObjectId.isValid(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+
+  if (idsValidos.length === 0) {
+    return {};
+  }
+
+  const resumenes = await Resenia.aggregate([
+    {
+      $match: {
+        curso: { $in: idsValidos },
+      },
+    },
+    {
+      $group: {
+        _id: "$curso",
+        promedio: { $avg: "$puntaje" },
+        cantidad: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return resumenes.reduce((acc, item) => {
+    acc[item._id.toString()] = {
+      promedio: Number(item.promedio.toFixed(1)),
+      cantidad: item.cantidad,
+    };
+
+    return acc;
+  }, {});
+};
+
 module.exports = {
   listarPorCurso,
   obtenerMiResenia,
@@ -216,4 +250,5 @@ module.exports = {
   editarResenia,
   eliminarResenia,
   obtenerResumenCurso,
+  obtenerResumenesPorCursos,
 };

@@ -179,6 +179,27 @@ function MisFavoritos() {
 
                     <p>{curso.descripcion}</p>
 
+                    <div className="mis-favoritos-card__rating">
+                      {Number(curso.promedioResenias || 0) > 0 ? (
+                        <>
+                          <span>
+                            ★ {Number(curso.promedioResenias).toFixed(1)}
+                          </span>
+                          <small>
+                            {curso.cantidadResenias}{" "}
+                            {Number(curso.cantidadResenias) === 1
+                              ? "reseña"
+                              : "reseñas"}
+                          </small>
+                        </>
+                      ) : (
+                        <>
+                          <span>★ Nuevo</span>
+                          <small>Sin reseñas</small>
+                        </>
+                      )}
+                    </div>
+
                     <div className="mis-favoritos-card__meta">
                       <span>{curso.nivel || "Nivel inicial"}</span>
                       <span>
