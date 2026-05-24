@@ -272,12 +272,20 @@ function AdminLecciones() {
     return total + Number(leccion.duracionMinutos || 0);
   }, 0);
 
+  const hayFiltrosActivos = Boolean(busqueda.trim() || filtroEstado);
+
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setFiltroEstado("");
+  };
+
   if (loadingCursos) {
     return (
       <section className="admin-lecciones-page">
         <div className="admin-lecciones-shell admin-lecciones-loading">
+          <div className="admin-lecciones-loading-icon">▤</div>
           <h1>Gestión de lecciones</h1>
-          <p>Cargando cursos...</p>
+          <p>Cargando cursos disponibles...</p>
         </div>
       </section>
     );
@@ -589,16 +597,69 @@ function AdminLecciones() {
 
             <div className="admin-lecciones-list">
               {!cursoSeleccionado ? (
-                <div className="admin-lecciones-empty">
-                  Seleccioná un curso para administrar sus lecciones.
+                <div className="admin-lecciones-empty-card">
+                  <div className="admin-lecciones-empty-icon">🎓</div>
+
+                  <h3>Seleccioná un curso</h3>
+
+                  <p>
+                    Elegí un curso desde el selector superior para ver, crear o
+                    administrar sus lecciones.
+                  </p>
                 </div>
               ) : loadingLecciones ? (
-                <div className="admin-lecciones-empty">
-                  Cargando lecciones...
+                <div className="admin-lecciones-empty-card loading">
+                  <div className="admin-lecciones-empty-icon">▤</div>
+
+                  <h3>Cargando lecciones</h3>
+
+                  <p>
+                    Estamos consultando el contenido cargado para este curso.
+                  </p>
                 </div>
               ) : leccionesFiltradas.length === 0 ? (
-                <div className="admin-lecciones-empty">
-                  No hay lecciones cargadas para este curso.
+                <div
+                  className={`admin-lecciones-empty-card ${
+                    lecciones.length === 0 ? "empty" : "filter"
+                  }`}
+                >
+                  <div className="admin-lecciones-empty-icon">
+                    {lecciones.length === 0 ? "📭" : "🔎"}
+                  </div>
+
+                  <h3>
+                    {lecciones.length === 0
+                      ? "No hay lecciones cargadas"
+                      : "No se encontraron lecciones"}
+                  </h3>
+
+                  <p>
+                    {lecciones.length === 0
+                      ? "Este curso todavía no tiene lecciones. Podés crear la primera desde el formulario."
+                      : "El curso tiene lecciones cargadas, pero ninguna coincide con la búsqueda o el estado seleccionado."}
+                  </p>
+
+                  <div className="admin-lecciones-empty-actions">
+                    {hayFiltrosActivos && lecciones.length > 0 && (
+                      <button type="button" onClick={limpiarFiltros}>
+                        Limpiar filtros
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={() => obtenerLecciones(cursoSeleccionado)}
+                    >
+                      Recargar lecciones
+                    </button>
+
+                    {lecciones.length === 0 && (
+                      <button type="button" onClick={handleNuevaLeccion}>
+                        Crear lección
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 leccionesFiltradas.map((leccion) => (

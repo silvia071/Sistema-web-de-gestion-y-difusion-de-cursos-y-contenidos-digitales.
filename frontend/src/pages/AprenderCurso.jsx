@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 import logo from "../assets/logo.png";
 import "./AprenderCurso.css";
+import { generarCertificado } from "../utils/generarCertificado";
 
 function tokenValido(token) {
   return (
@@ -516,7 +517,23 @@ function AprenderCurso() {
         </div>
 
         {!esAdmin && porcentajeProgreso === 100 && (
-          <div className="curso-finalizado">🎉 ¡Curso completado!</div>
+          <div className="curso-finalizado-box">
+            <div className="curso-finalizado">🎉 ¡Curso completado!</div>
+
+            <button
+              type="button"
+              className="btn-certificado-player"
+              onClick={() =>
+                generarCertificado({
+                  _id: accesoCurso?._id,
+                  curso,
+                  progreso: porcentajeProgreso,
+                })
+              }
+            >
+              🏆 Descargar certificado
+            </button>
+          </div>
         )}
       </aside>
 

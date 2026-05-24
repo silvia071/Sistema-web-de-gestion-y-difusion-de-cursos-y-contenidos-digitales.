@@ -12,6 +12,75 @@ function formatearPrecio(valor) {
     maximumFractionDigits: 0,
   });
 }
+function obtenerSiglaCurso(titulo) {
+  const palabrasIgnoradas = [
+    "curso",
+    "cursos",
+    "de",
+    "del",
+    "la",
+    "las",
+    "el",
+    "los",
+    "y",
+    "con",
+    "para",
+    "desde",
+    "aprende",
+    "aprendé",
+    "introducción",
+    "basico",
+    "básico",
+    "avanzado",
+  ];
+
+  const texto = String(titulo || "")
+    .trim()
+    .replace(/\s+/g, " ");
+
+  if (!texto) return "C";
+
+  const textoLower = texto.toLowerCase();
+
+  const casosEspeciales = [
+    { clave: "javascript", sigla: "JS" },
+    { clave: "typescript", sigla: "TS" },
+    { clave: "node", sigla: "ND" },
+    { clave: "react", sigla: "RE" },
+    { clave: "python", sigla: "PY" },
+    { clave: "sql", sigla: "SQL" },
+    { clave: "mongo", sigla: "MDB" },
+    { clave: "html", sigla: "HTML" },
+    { clave: "css", sigla: "CSS" },
+    { clave: "api", sigla: "API" },
+    { clave: "c++", sigla: "C++" },
+  ];
+
+  const casoEncontrado = casosEspeciales.find((caso) =>
+    textoLower.includes(caso.clave),
+  );
+
+  if (casoEncontrado) return casoEncontrado.sigla;
+
+  const palabras = texto
+    .split(" ")
+    .filter(Boolean)
+    .filter((palabra) => !palabrasIgnoradas.includes(palabra.toLowerCase()));
+
+  if (palabras.length === 0) {
+    return texto.slice(0, 3).toUpperCase();
+  }
+
+  if (palabras.length === 1) {
+    return palabras[0].slice(0, 3).toUpperCase();
+  }
+
+  return palabras
+    .slice(0, 2)
+    .map((palabra) => palabra[0])
+    .join("")
+    .toUpperCase();
+}
 
 function formatearFecha(fecha) {
   if (!fecha) return "Sin fecha";
@@ -512,20 +581,33 @@ export default function AdminCompras() {
       <section className="admin-compras-table-card">
         {comprasFiltradas.length === 0 ? (
           <div className="admin-compras-empty compact">
-            <span className="admin-compras-empty-icon">🔎</span>
+            <span className="admin-compras-empty-icon">
+              {compras.length === 0 ? "🧾" : "🔎"}
+            </span>
 
-            <h3>No encontramos órdenes</h3>
+            <h3>
+              {compras.length === 0
+                ? "No hay compras registradas"
+                : "No encontramos órdenes"}
+            </h3>
 
             <p>
-              No hay compras que coincidan con la búsqueda, el estado
-              seleccionado o el orden aplicado.
+              {compras.length === 0
+                ? "Todavía no se generaron órdenes de compra en la plataforma. Cuando un usuario compre un curso, aparecerá en este listado."
+                : "No hay compras que coincidan con la búsqueda, el estado seleccionado o el orden aplicado."}
             </p>
 
-            {hayFiltrosActivos && (
-              <button type="button" onClick={limpiarFiltros}>
-                Limpiar filtros
+            <div className="admin-compras-empty-actions">
+              {hayFiltrosActivos && compras.length > 0 && (
+                <button type="button" onClick={limpiarFiltros}>
+                  Limpiar filtros
+                </button>
+              )}
+
+              <button type="button" onClick={obtenerCompras}>
+                Recargar compras
               </button>
-            )}
+            </div>
           </div>
         ) : (
           <div className="admin-compras-table">
@@ -678,7 +760,7 @@ export default function AdminCompras() {
                   key={detalle._id || detalle.id}
                   className="admin-compra-modal-curso"
                 >
-                  <span>📘</span>
+                  <span>{obtenerSiglaCurso(detalle?.curso?.titulo)}</span>
 
                   <div>
                     <strong>

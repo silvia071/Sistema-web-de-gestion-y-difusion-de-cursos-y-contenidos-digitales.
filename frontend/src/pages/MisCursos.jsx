@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 import { getImageUrl } from "../utils/getImageUrl";
 import "./MisCursos.css";
+import { generarCertificado } from "../utils/generarCertificado";
 
 export default function MisCursos() {
   const [accesos, setAccesos] = useState([]);
@@ -378,12 +379,24 @@ export default function MisCursos() {
                           <span>{progreso}%</span>
                         </div>
 
-                        <button
-                          className="btn-entrar"
-                          onClick={() => entrarAlCurso(curso._id)}
-                        >
-                          {completado ? "Ver curso" : "Continuar"} →
-                        </button>
+                        <div className="mis-curso-card-actions">
+                          <button
+                            className="btn-entrar"
+                            onClick={() => entrarAlCurso(curso._id)}
+                          >
+                            {completado ? "Ver curso" : "Continuar"} →
+                          </button>
+
+                          {completado && (
+                            <button
+                              type="button"
+                              className="btn-certificado"
+                              onClick={() => generarCertificado(acceso)}
+                            >
+                              Descargar certificado
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </article>
                   );

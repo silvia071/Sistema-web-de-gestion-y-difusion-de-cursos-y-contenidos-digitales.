@@ -118,12 +118,20 @@ function AdminDatosFacturacion() {
 
   const totalConCuit = datos.filter((dato) => dato.cuitCuil).length;
 
+  const hayFiltrosActivos = Boolean(busqueda.trim() || filtroCondicion);
+
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setFiltroCondicion("");
+  };
+
   if (loading) {
     return (
       <section className="admin-facturacion-page">
         <div className="admin-facturacion-shell admin-facturacion-loading">
+          <div className="admin-facturacion-loading-icon">🧾</div>
           <h1>Datos de facturación</h1>
-          <p>Cargando datos fiscales...</p>
+          <p>Cargando datos fiscales registrados...</p>
         </div>
       </section>
     );
@@ -252,8 +260,42 @@ function AdminDatosFacturacion() {
 
           <div className="admin-facturacion-list">
             {datosFiltrados.length === 0 ? (
-              <div className="admin-facturacion-empty">
-                No se encontraron datos de facturación.
+              <div
+                className={`admin-facturacion-empty-card ${
+                  datos.length === 0 ? "empty" : "filter"
+                }`}
+              >
+                <div className="admin-facturacion-empty-icon">
+                  {datos.length === 0 ? "🧾" : "🔎"}
+                </div>
+
+                <h3>
+                  {datos.length === 0
+                    ? "No hay datos de facturación"
+                    : "No se encontraron datos fiscales"}
+                </h3>
+
+                <p>
+                  {datos.length === 0
+                    ? "Todavía no hay información fiscal cargada por los usuarios. Cuando completen sus datos de facturación, aparecerán en este listado."
+                    : "No hay datos fiscales que coincidan con la búsqueda o la condición fiscal seleccionada."}
+                </p>
+
+                <div className="admin-facturacion-empty-actions">
+                  {hayFiltrosActivos && datos.length > 0 && (
+                    <button type="button" onClick={limpiarFiltros}>
+                      Limpiar filtros
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={cargarDatosFacturacion}
+                  >
+                    Recargar datos
+                  </button>
+                </div>
               </div>
             ) : (
               datosFiltrados.map((dato) => {

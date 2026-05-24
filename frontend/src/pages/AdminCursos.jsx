@@ -346,12 +346,24 @@ function AdminCursos() {
     (curso) => curso.estado === "OCULTO",
   ).length;
 
+  const hayFiltrosActivos = Boolean(
+    busqueda.trim() || filtroNivel || filtroCategoria || filtroEstado,
+  );
+
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setFiltroNivel("");
+    setFiltroCategoria("");
+    setFiltroEstado("");
+  };
+
   if (loading) {
     return (
       <section className="admin-cursos-page">
         <div className="admin-cursos-shell admin-loading-card">
+          <div className="admin-loading-icon">🎓</div>
           <h1>Gestión de cursos</h1>
-          <p>Cargando cursos...</p>
+          <p>Cargando cursos registrados...</p>
         </div>
       </section>
     );
@@ -685,7 +697,49 @@ function AdminCursos() {
 
             <div className="admin-list">
               {cursosFiltrados.length === 0 ? (
-                <div className="admin-empty">No hay cursos para mostrar.</div>
+                <div
+                  className={`admin-empty-card ${
+                    cursos.length === 0 ? "empty" : "filter"
+                  }`}
+                >
+                  <div className="admin-empty-icon">
+                    {cursos.length === 0 ? "🎓" : "🔎"}
+                  </div>
+
+                  <h3>
+                    {cursos.length === 0
+                      ? "No hay cursos creados"
+                      : "No se encontraron cursos"}
+                  </h3>
+
+                  <p>
+                    {cursos.length === 0
+                      ? "Todavía no cargaste cursos en la plataforma. Cuando crees el primero, aparecerá en este listado."
+                      : "No hay cursos que coincidan con la búsqueda o los filtros aplicados."}
+                  </p>
+
+                  <div className="admin-empty-actions">
+                    {hayFiltrosActivos && cursos.length > 0 && (
+                      <button type="button" onClick={limpiarFiltros}>
+                        Limpiar filtros
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={cargarDatos}
+                    >
+                      Recargar cursos
+                    </button>
+
+                    {cursos.length === 0 && (
+                      <button type="button" onClick={handleNuevoCurso}>
+                        Crear curso
+                      </button>
+                    )}
+                  </div>
+                </div>
               ) : (
                 cursosFiltrados.map((curso) => {
                   const cursoId = obtenerIdCurso(curso);

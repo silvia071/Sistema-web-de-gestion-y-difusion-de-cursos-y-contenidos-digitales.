@@ -80,10 +80,37 @@
 }
 
 .admin-loading-card {
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.admin-loading-icon {
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  border-radius: 20px;
+  font-size: 2rem;
+  background: linear-gradient(135deg, #38bdf8, #6366f1 48%, #c026d3);
+  box-shadow:
+    0 18px 42px rgba(99, 102, 241, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.admin-loading-card h1 {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 2rem;
+}
+
+.admin-loading-card p {
+  margin: 0;
+  color: #b9c4ee;
+  font-weight: 800;
 }
 
 /* HEADER */
@@ -905,15 +932,101 @@
   background: linear-gradient(135deg, #fb7185, #ef4444 48%, #dc2626);
 }
 
-.admin-empty {
-  padding: 38px 18px;
+.admin-empty-card {
+  min-height: 240px;
+  padding: 34px 22px;
+  display: grid;
+  place-items: center;
+  align-content: center;
   text-align: center;
   color: #b9c4ee;
-  border: 1px dashed rgba(151, 170, 255, 0.22);
-  border-radius: 16px;
-  background: rgba(7, 15, 48, 0.34);
+  border: 1px dashed rgba(151, 170, 255, 0.24);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.13), transparent 34%),
+    rgba(7, 15, 48, 0.34);
 }
 
+.admin-empty-card.filter {
+  border-color: rgba(251, 191, 36, 0.28);
+  background:
+    radial-gradient(circle at top, rgba(245, 158, 11, 0.14), transparent 34%),
+    rgba(7, 15, 48, 0.34);
+}
+
+.admin-empty-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  font-size: 1.6rem;
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.22),
+    rgba(168, 85, 247, 0.24)
+  );
+  border: 1px solid rgba(151, 170, 255, 0.2);
+}
+
+.admin-empty-card.filter .admin-empty-icon {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.22),
+    rgba(236, 72, 153, 0.2)
+  );
+  border-color: rgba(251, 191, 36, 0.24);
+}
+
+.admin-empty-card h3 {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 1.22rem;
+  letter-spacing: -0.03em;
+}
+
+.admin-empty-card p {
+  max-width: 520px;
+  margin: 0 auto 18px;
+  color: #b9c4ee;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.admin-empty-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-empty-actions button {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid rgba(179, 198, 255, 0.24);
+  border-radius: 12px;
+  color: #ffffff;
+  font-family: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 45%, #c026d3 100%);
+  box-shadow: 0 12px 28px rgba(89, 96, 255, 0.24);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.admin-empty-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.admin-empty-actions button.ghost {
+  color: #dce6ff;
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: none;
+}
 /* ESCRITORIO COMPACTO */
 
 @media (min-width: 1200px) {

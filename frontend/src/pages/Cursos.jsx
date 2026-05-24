@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCarrito } from "../context/CarritoContext";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import api from "../services/api";
 import { getImageUrl } from "../utils/getImageUrl";
 import "./Curso.css";
@@ -63,32 +63,37 @@ function Cursos() {
     localStorage.setItem("favoritosCursos", JSON.stringify(favoritosIds));
   }, [favoritosIds]);
 
-  useEffect(() => {
-    const cargarCursos = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const cargarCursos = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const rolActual = localStorage.getItem("rol");
+      const rolActual = localStorage.getItem("rol");
 
-        const endpoint =
-          rolActual === "ADMINISTRADOR"
-            ? "/api/cursos/admin/todos"
-            : "/api/cursos";
+      const endpoint =
+        rolActual === "ADMINISTRADOR"
+          ? "/api/cursos/admin/todos"
+          : "/api/cursos";
 
-        const response = await api.get(endpoint);
+      const response = await api.get(endpoint);
+      const datos = response.data.datos || response.data || [];
 
-        setCursos(response.data.datos || []);
-      } catch (err) {
-        console.error(err);
-        setError("Error al cargar los cursos");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    cargarCursos();
+      setCursos(Array.isArray(datos) ? datos : []);
+    } catch (err) {
+      console.error(err);
+      setCursos([]);
+      setError(
+        err.response?.data?.mensaje ||
+          "No se pudieron cargar los cursos disponibles.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    cargarCursos();
+  }, [cargarCursos]);
 
   useEffect(() => {
     const obtenerMisCursos = async () => {
@@ -286,7 +291,11 @@ function Cursos() {
     return (
       <div className="cursos-page">
         <div className="cursos-container">
-          <p className="cursos-estado">Cargando cursos...</p>
+          <div className="cursos-estado-card loading">
+            <div className="cursos-estado-icon">📚</div>
+            <h2>Cargando cursos</h2>
+            <p>Estamos preparando el catálogo disponible.</p>
+          </div>
         </div>
       </div>
     );
@@ -296,7 +305,15 @@ function Cursos() {
     return (
       <div className="cursos-page">
         <div className="cursos-container">
-          <p className="cursos-estado cursos-estado--error">{error}</p>
+          <div className="cursos-estado-card error">
+            <div className="cursos-estado-icon">⚠️</div>
+            <h2>Error al cargar cursos</h2>
+            <p>{error}</p>
+
+            <button type="button" onClick={cargarCursos}>
+              Reintentar
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -396,16 +413,38 @@ function Cursos() {
         </section>
 
         {cursosFiltrados.length === 0 ? (
-          <div className="cursos-estado cursos-estado--empty">
-            <span>🔎</span>
-            <h3>No se encontraron cursos</h3>
-            <p>Probá cambiando la búsqueda, la categoría o el ordenamiento.</p>
+          <div
+            className={`cursos-estado-card ${
+              cursos.length === 0 ? "empty" : "filter"
+            }`}
+          >
+            <div className="cursos-estado-icon">
+              {cursos.length === 0 ? "📭" : "🔎"}
+            </div>
 
-            {hayFiltrosActivos && (
-              <button type="button" onClick={limpiarFiltros}>
-                Limpiar filtros
+            <h2>
+              {cursos.length === 0
+                ? "No hay cursos disponibles"
+                : "No se encontraron cursos"}
+            </h2>
+
+            <p>
+              {cursos.length === 0
+                ? "Todavía no hay cursos publicados en la plataforma. Cuando se carguen nuevos cursos, van a aparecer en este catálogo."
+                : "No encontramos cursos que coincidan con la búsqueda o los filtros aplicados."}
+            </p>
+
+            <div className="cursos-estado-actions">
+              {hayFiltrosActivos && cursos.length > 0 && (
+                <button type="button" onClick={limpiarFiltros}>
+                  Limpiar filtros
+                </button>
+              )}
+
+              <button type="button" className="ghost" onClick={cargarCursos}>
+                Recargar cursos
               </button>
-            )}
+            </div>
           </div>
         ) : (
           <div

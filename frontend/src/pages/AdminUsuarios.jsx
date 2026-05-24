@@ -424,6 +424,16 @@ function AdminUsuarios() {
     (usuario) => usuario.rol === "CLIENTE",
   ).length;
 
+  const hayFiltrosActivos = Boolean(
+    busqueda.trim() || filtroRol || filtroEstado,
+  );
+
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setFiltroRol("");
+    setFiltroEstado("");
+  };
+
   const obtenerIniciales = (usuario) => {
     const nombre = usuario.nombre?.trim()?.[0] || "";
     const apellido = usuario.apellido?.trim()?.[0] || "";
@@ -702,10 +712,59 @@ function AdminUsuarios() {
 
             <div className="admin-usuarios-list">
               {loading ? (
-                <div className="admin-usuarios-empty">Cargando usuarios...</div>
+                <div className="admin-usuarios-empty-card loading">
+                  <div className="admin-usuarios-empty-icon">👥</div>
+
+                  <h3>Cargando usuarios</h3>
+
+                  <p>
+                    Estamos consultando los usuarios registrados en la
+                    plataforma.
+                  </p>
+                </div>
               ) : usuariosFiltrados.length === 0 ? (
-                <div className="admin-usuarios-empty">
-                  No hay usuarios para mostrar.
+                <div
+                  className={`admin-usuarios-empty-card ${
+                    usuarios.length === 0 ? "empty" : "filter"
+                  }`}
+                >
+                  <div className="admin-usuarios-empty-icon">
+                    {usuarios.length === 0 ? "👥" : "🔎"}
+                  </div>
+
+                  <h3>
+                    {usuarios.length === 0
+                      ? "No hay usuarios registrados"
+                      : "No se encontraron usuarios"}
+                  </h3>
+
+                  <p>
+                    {usuarios.length === 0
+                      ? "Todavía no hay usuarios cargados en la plataforma. Cuando se registre o crees un usuario, aparecerá en este listado."
+                      : "No hay usuarios que coincidan con la búsqueda, el rol o el estado seleccionado."}
+                  </p>
+
+                  <div className="admin-usuarios-empty-actions">
+                    {hayFiltrosActivos && usuarios.length > 0 && (
+                      <button type="button" onClick={limpiarFiltros}>
+                        Limpiar filtros
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={cargarUsuarios}
+                    >
+                      Recargar usuarios
+                    </button>
+
+                    {usuarios.length === 0 && (
+                      <button type="button" onClick={handleNuevoUsuario}>
+                        Crear usuario
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 usuariosFiltrados.map((usuario) => {

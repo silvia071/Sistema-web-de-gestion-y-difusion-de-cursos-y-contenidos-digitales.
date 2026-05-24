@@ -20,7 +20,8 @@ function AdminPagos() {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState("");
+  const [errorAccion, setErrorAccion] = useState("");
+  const [errorCarga, setErrorCarga] = useState("");
   const [procesandoId, setProcesandoId] = useState(null);
 
   const [busqueda, setBusqueda] = useState("");
@@ -34,7 +35,8 @@ function AdminPagos() {
   const obtenerPagos = async () => {
     try {
       setLoading(true);
-      setError("");
+      setErrorCarga("");
+      setErrorAccion("");
 
       const response = await api.get("/api/pagos");
       const datos = response.data.datos || response.data || [];
@@ -43,7 +45,8 @@ function AdminPagos() {
     } catch (error) {
       console.error("Error obteniendo pagos:", error);
 
-      setError(
+      setPagos([]);
+      setErrorCarga(
         error.response?.data?.mensaje || "No se pudieron cargar los pagos.",
       );
     } finally {
@@ -81,7 +84,7 @@ function AdminPagos() {
     try {
       setProcesandoId(pagoPendiente);
       setMensaje("");
-      setError("");
+      setErrorAccion("");
 
       await api.patch(`/api/pagos/${pagoPendiente}/${accionPendiente}`);
 
@@ -107,7 +110,7 @@ function AdminPagos() {
     } catch (error) {
       console.error("Error procesando pago:", error);
 
-      setError(
+      setErrorAccion(
         error.response?.data?.mensaje ||
           `No se pudo ${
             accionPendiente === "aprobar" ? "aprobar" : "rechazar"
@@ -277,6 +280,65 @@ function AdminPagos() {
 
   const hayFiltrosActivos = Boolean(busqueda || filtroMetodo || filtroEstado);
 
+  const obtenerEstadoVacio = () => {
+    if (errorCarga) {
+      return {
+        tipo: "error",
+        icono: "⚠️",
+        titulo: "No se pudieron cargar los pagos",
+        descripcion:
+          "Ocurrió un problema al consultar la información. Podés reintentar la carga sin salir de esta pantalla.",
+        detalle: errorCarga,
+        accionPrincipal: "Reintentar",
+        onAccionPrincipal: obtenerPagos,
+      };
+    }
+
+    if (pagos.length === 0) {
+      return {
+        tipo: "default",
+        icono: "💳",
+        titulo: "No hay pagos registrados",
+        descripcion:
+          "Todavía no se generaron pagos en la plataforma. Cuando un alumno inicie una compra, aparecerá en este listado.",
+        accionPrincipal: "Recargar pagos",
+        onAccionPrincipal: obtenerPagos,
+      };
+    }
+
+    if (filtroEstado === "PENDIENTE" && totalPendientes === 0) {
+      return {
+        tipo: "pending",
+        icono: "✓",
+        titulo: "No hay pagos pendientes",
+        descripcion:
+          "No hay pagos esperando revisión manual. Podés ver todos los pagos o recargar la información.",
+        accionPrincipal: "Ver todos",
+        onAccionPrincipal: () => aplicarFiltroEstado(""),
+        accionSecundaria: "Recargar pagos",
+        onAccionSecundaria: obtenerPagos,
+      };
+    }
+
+    if (hayFiltrosActivos && pagosFiltrados.length === 0) {
+      return {
+        tipo: "filter",
+        icono: "🔎",
+        titulo: "No hay resultados para los filtros aplicados",
+        descripcion:
+          "No encontramos pagos que coincidan con la búsqueda o los filtros seleccionados.",
+        accionPrincipal: "Limpiar filtros",
+        onAccionPrincipal: limpiarFiltros,
+        accionSecundaria: "Recargar pagos",
+        onAccionSecundaria: obtenerPagos,
+      };
+    }
+
+    return null;
+  };
+
+  const estadoVacio = obtenerEstadoVacio();
+
   if (loading) {
     return (
       <section className="admin-pagos-page">
@@ -341,16 +403,18 @@ function AdminPagos() {
           </button>
         </section>
 
-        {(mensaje || error) && (
+        {(mensaje || errorAccion) && (
           <div className="admin-pagos-feedback">
             {mensaje && (
               <div className="admin-pagos-alert success">{mensaje}</div>
             )}
-            {error && <div className="admin-pagos-alert error">{error}</div>}
+            {errorAccion && (
+              <div className="admin-pagos-alert error">{errorAccion}</div>
+            )}
           </div>
         )}
 
-        {filtroEstado === "PENDIENTE" && (
+        {filtroEstado === "PENDIENTE" && totalPendientes > 0 && (
           <div className="admin-pagos-alert info">
             Mostrando pagos pendientes de revisión.
           </div>
@@ -444,6 +508,7 @@ function AdminPagos() {
             <select
               value={filtroMetodo}
               onChange={(e) => setFiltroMetodo(e.target.value)}
+              disabled={errorCarga || pagos.length === 0}
             >
               <option value="">Todos los métodos</option>
 
@@ -460,6 +525,7 @@ function AdminPagos() {
             <select
               value={filtroEstado}
               onChange={(e) => aplicarFiltroEstado(e.target.value)}
+              disabled={errorCarga || pagos.length === 0}
             >
               <option value="">Todos los estados</option>
               <option value="PENDIENTE">Pendiente</option>
@@ -494,29 +560,61 @@ function AdminPagos() {
               <p>Listado general de pagos generados en la plataforma.</p>
             </div>
 
-            <span>{pagosFiltrados.length} pagos</span>
+            <span>
+              {pagosFiltrados.length === 1
+                ? "1 pago"
+                : `${pagosFiltrados.length} pagos`}
+            </span>
           </div>
 
           <div className="admin-pagos-list">
-            {pagosFiltrados.length === 0 ? (
-              <div className="admin-pagos-empty">
-                <div className="admin-pagos-empty-icon">🔎</div>
-                <h3>No hay pagos para mostrar</h3>
-                <p>
-                  Probá cambiar los filtros, limpiar la búsqueda o recargar la
-                  información.
-                </p>
+            {!estadoVacio && (
+              <div className="admin-pagos-table-head">
+                <span>Usuario</span>
+                <span>Método</span>
+                <span>Curso/s</span>
+                <span>Compra</span>
+                <span>Fecha</span>
+                <span>Monto</span>
+                <span>Acción</span>
+              </div>
+            )}
+
+            {estadoVacio ? (
+              <div className={`admin-pagos-empty ${estadoVacio.tipo}`}>
+                <div className="admin-pagos-empty-icon">
+                  {estadoVacio.icono}
+                </div>
+
+                <h3>{estadoVacio.titulo}</h3>
+
+                <p>{estadoVacio.descripcion}</p>
+
+                {estadoVacio.detalle && (
+                  <small className="admin-pagos-empty-detail">
+                    {estadoVacio.detalle}
+                  </small>
+                )}
 
                 <div className="admin-pagos-empty-actions">
-                  {hayFiltrosActivos && (
-                    <button type="button" onClick={limpiarFiltros}>
-                      Limpiar filtros
+                  {estadoVacio.accionPrincipal && (
+                    <button
+                      type="button"
+                      onClick={estadoVacio.onAccionPrincipal}
+                    >
+                      {estadoVacio.accionPrincipal}
                     </button>
                   )}
 
-                  <button type="button" onClick={obtenerPagos}>
-                    Recargar pagos
-                  </button>
+                  {estadoVacio.accionSecundaria && (
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={estadoVacio.onAccionSecundaria}
+                    >
+                      {estadoVacio.accionSecundaria}
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
