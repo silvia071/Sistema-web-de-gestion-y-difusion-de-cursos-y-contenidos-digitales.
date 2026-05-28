@@ -45,10 +45,9 @@ const accesoCursoSchema = new mongoose.Schema(
 
     codigoCertificado: {
       type: String,
-      default: null,
-      trim: true,
       unique: true,
       sparse: true,
+      default: undefined,
     },
 
     fechaFinalizacion: {

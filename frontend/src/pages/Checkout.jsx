@@ -372,11 +372,16 @@ function Checkout() {
       }, 1600);
     } catch (error) {
       console.error("Error al finalizar compra:", error);
+      console.error("URL:", error.config?.url);
+      console.error("METHOD:", error.config?.method);
+      console.error("STATUS:", error.response?.status);
+      console.error("DATA BACKEND:", error.response?.data);
 
       setProcesandoPagoVisual(false);
 
       const mensajeBackend =
         error.response?.data?.mensaje ||
+        error.response?.data?.error ||
         error.message ||
         "Ocurrió un error al finalizar la compra.";
 

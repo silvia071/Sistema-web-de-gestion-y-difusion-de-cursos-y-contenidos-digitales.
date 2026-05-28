@@ -2,9 +2,9 @@ const Compra = require("../models/compra.model");
 const DetalleCompra = require("../models/detalleCompra.model");
 const AccesoCurso = require("../models/accesoCurso.model");
 const Cupon = require("../models/cupon.model");
+const Pago = require("../models/pago.model");
 const EstadoCompra = require("../enums/estadoCompra");
-
-const ESTADOS_COMPRA_PENDIENTES = [EstadoCompra.PENDIENTE, "EN_PROCESO"];
+const EstadoPago = require("../enums/estadoPago");
 
 const populateCompra = (query) => {
   return query.populate("usuario").populate({
@@ -26,16 +26,23 @@ const validarCompraPendiente = async (usuarioId, cursoId) => {
     return;
   }
 
-  const compraPendiente = await Compra.findOne({
+  const comprasPendientes = await Compra.find({
     usuario: usuarioId,
     detalles: { $in: detallesIds },
-    estado: { $in: ESTADOS_COMPRA_PENDIENTES },
-  });
+    estado: EstadoCompra.PENDIENTE,
+  }).select("_id");
 
-  if (compraPendiente) {
-    throw new Error(
-      "Ya tenés una compra pendiente de aprobación para uno de los cursos del carrito",
-    );
+  for (const compra of comprasPendientes) {
+    const pago = await Pago.findOne({
+      compra: compra._id,
+      estado: EstadoPago.PENDIENTE,
+    }).populate("metodoPago");
+
+    if (pago?.metodoPago?.tipo === "TRANSFERENCIA") {
+      throw new Error(
+        "Ya tenés una compra pendiente de aprobación por transferencia para uno de los cursos del carrito",
+      );
+    }
   }
 };
 

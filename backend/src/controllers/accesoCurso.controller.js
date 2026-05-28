@@ -88,7 +88,6 @@ const crearAccesoCurso = async (req, res) => {
       progreso: 0,
       estado: "ACTIVO",
       certificadoEmitido: false,
-      codigoCertificado: null,
       fechaFinalizacion: null,
     });
 

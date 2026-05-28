@@ -31,14 +31,17 @@ function Registro() {
     if (success) setSuccess("");
   };
 
-  const irALogin = (email) => {
-    setTimeout(() => {
-      navigate("/login", {
-        replace: true,
-        state: { email },
-      });
-    }, 1200);
+const irALogin = () => {
+  navigate("/login", {
+    replace: true,
+    state: { email: form.email.trim().toLowerCase() },
+  });
+};
+
+const irAlInicio = () => {
+  navigate("/", { replace: true });
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,7 +70,6 @@ function Registro() {
 
     if (USE_MOCK_API) {
       setSuccess("Usuario registrado correctamente.");
-      irALogin(email);
       setSubmitting(false);
       return;
     }
@@ -81,7 +83,6 @@ function Registro() {
       });
 
       setSuccess(data?.mensaje || "Usuario registrado correctamente.");
-      irALogin(email);
     } catch (err) {
       console.error(err);
 
@@ -120,7 +121,36 @@ function Registro() {
           )}
 
           {success && (
-            <p className="registro-alert registro-alert-success">{success}</p>
+            <div className="registro-success-overlay">
+              <div className="registro-success-modal">
+                <div className="registro-success-icon">✓</div>
+
+                <h2>Usuario registrado correctamente</h2>
+
+                <p>
+                  Tu cuenta fue creada con éxito. Ya podés iniciar sesión y
+                  empezar a explorar los cursos.
+                </p>
+
+                <div className="registro-success-actions">
+                  <button
+                    type="button"
+                    className="registro-success-btn registro-success-btn-primary"
+                    onClick={irALogin}
+                  >
+                    Iniciar sesión
+                  </button>
+
+                  <button
+                    type="button"
+                    className="registro-success-btn registro-success-btn-secondary"
+                    onClick={irAlInicio}
+                  >
+                    Ir al inicio
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           <div className="registro-row">
